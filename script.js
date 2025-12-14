@@ -37,6 +37,7 @@
   const downloadBtn = document.getElementById('downloadBtn');
   const previewBtn = document.getElementById('previewBtn');
   const randomizeBtn = document.getElementById('randomizeBtn');
+  const darkModeToggle = document.getElementById('darkModeToggle');
 
   // Resolution presets
   const resolutions = {
@@ -1370,7 +1371,42 @@
     });
   });
 
+  // Dark Mode Toggle Function
+  function initDarkMode() {
+    // Check localStorage for saved preference
+    const savedMode = localStorage.getItem('darkMode');
+    const isDarkMode = savedMode === null ? true : savedMode === 'true'; // Default to dark mode
+    
+    if (!isDarkMode) {
+      document.documentElement.classList.add('light-mode');
+      darkModeToggle.querySelector('.toggle-icon').textContent = '☀️';
+    } else {
+      document.documentElement.classList.remove('light-mode');
+      darkModeToggle.querySelector('.toggle-icon').textContent = '🌙';
+    }
+  }
+
+  function toggleDarkMode() {
+    const isLightMode = document.documentElement.classList.contains('light-mode');
+    
+    if (isLightMode) {
+      // Switch to dark mode
+      document.documentElement.classList.remove('light-mode');
+      darkModeToggle.querySelector('.toggle-icon').textContent = '🌙';
+      localStorage.setItem('darkMode', 'true');
+    } else {
+      // Switch to light mode
+      document.documentElement.classList.add('light-mode');
+      darkModeToggle.querySelector('.toggle-icon').textContent = '☀️';
+      localStorage.setItem('darkMode', 'false');
+    }
+  }
+
+  // Dark mode toggle event listener
+  darkModeToggle.addEventListener('click', toggleDarkMode);
+
   // Initialize
   setCanvasResolution(3840, 2160);
   buildWallpaperGrid('all');
+  initDarkMode();
 })();
