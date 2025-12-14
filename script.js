@@ -68,6 +68,55 @@
   const qualityValue = document.getElementById('qualityValue');
   const qualityLabel = document.getElementById('qualityLabel');
   const fileSizeEstimate = document.getElementById('fileSizeEstimate');
+  
+  // Editor elements
+  const editorSection = document.getElementById('editorSection');
+  const editorToggleBtn = document.getElementById('editorToggleBtn');
+  const editorTabs = document.querySelectorAll('.editor-tab');
+  const textTab = document.getElementById('textTab');
+  const filtersTab = document.getElementById('filtersTab');
+  const cropTab = document.getElementById('cropTab');
+  const layersTab = document.getElementById('layersTab');
+  const editorText = document.getElementById('editorText');
+  const textSize = document.getElementById('textSize');
+  const textSizeValue = document.getElementById('textSizeValue');
+  const textColor = document.getElementById('textColor');
+  const textFont = document.getElementById('textFont');
+  const textX = document.getElementById('textX');
+  const textXValue = document.getElementById('textXValue');
+  const textY = document.getElementById('textY');
+  const textYValue = document.getElementById('textYValue');
+  const textBold = document.getElementById('textBold');
+  const textItalic = document.getElementById('textItalic');
+  const textShadow = document.getElementById('textShadow');
+  const addTextBtn = document.getElementById('addTextBtn');
+  const removeTextBtn = document.getElementById('removeTextBtn');
+  const filterBlur = document.getElementById('filterBlur');
+  const blurValue = document.getElementById('blurValue');
+  const filterBrightness = document.getElementById('filterBrightness');
+  const brightnessFilterValue = document.getElementById('brightnessFilterValue');
+  const filterContrast = document.getElementById('filterContrast');
+  const contrastFilterValue = document.getElementById('contrastFilterValue');
+  const filterSaturation = document.getElementById('filterSaturation');
+  const saturationFilterValue = document.getElementById('saturationFilterValue');
+  const filterHue = document.getElementById('filterHue');
+  const hueFilterValue = document.getElementById('hueFilterValue');
+  const filterSepia = document.getElementById('filterSepia');
+  const sepiaValue = document.getElementById('sepiaValue');
+  const applyFiltersBtn = document.getElementById('applyFiltersBtn');
+  const resetFiltersBtn = document.getElementById('resetFiltersBtn');
+  const cropX = document.getElementById('cropX');
+  const cropXValue = document.getElementById('cropXValue');
+  const cropY = document.getElementById('cropY');
+  const cropYValue = document.getElementById('cropYValue');
+  const cropWidth = document.getElementById('cropWidth');
+  const cropWidthValue = document.getElementById('cropWidthValue');
+  const cropHeight = document.getElementById('cropHeight');
+  const cropHeightValue = document.getElementById('cropHeightValue');
+  const applyCropBtn = document.getElementById('applyCropBtn');
+  const resetCropBtn = document.getElementById('resetCropBtn');
+  const layersList = document.getElementById('layersList');
+  const clearLayersBtn = document.getElementById('clearLayersBtn');
 
   // Resolution presets
   const resolutions = {
@@ -180,6 +229,26 @@
   let history = [];
   let historyIndex = -1;
   const MAX_HISTORY_SIZE = 50;
+  
+  // Editor state
+  let editorActive = false;
+  let textOverlays = [];
+  let currentFilters = {
+    blur: 0,
+    brightness: 100,
+    contrast: 100,
+    saturation: 100,
+    hue: 0,
+    sepia: 0
+  };
+  let cropSettings = {
+    x: 0,
+    y: 0,
+    width: 100,
+    height: 100
+  };
+  let editorCanvas = null;
+  let editorCtx = null;
 
   // History Management
   function saveHistoryState() {
@@ -742,6 +811,178 @@
       case 'kawaii': drawKawaii(animationTime, palette, intensity); break;
       default: drawAurora(animationTime, palette, intensity);
     }
+    
+    // Apply editor effects after rendering
+    if (editorActive) {
+      applyEditorEffects();
+    }
+  }
+
+  // Apply editor effects to canvas
+  function applyEditorEffects() {
+    if (!editorActive || !currentWallpaper) return;
+    
+    // Create editor canvas if it doesn't exist or if dimensions changed
+    if (!editorCanvas || editorCanvas.width !== canvas.width || editorCanvas.height !== canvas.height) {
+      editorCanvas = document.createElement('canvas');
+      editorCanvas.width = canvas.width;
+      editorCanvas.height = canvas.height;
+      editorCtx = editorCanvas.getContext('2d');
+    }
+    
+    // Copy main canvas to editor canvas
+    editorCtx.clearRect(0, 0, editorCanvas.width, editorCanvas.height);
+    editorCtx.drawImage(canvas, 0, 0);
+    
+    // Create a working canvas for applying effects
+    const workCanvas = document.createElement('canvas');
+    workCanvas.width = editorCanvas.width;
+    workCanvas.height = editorCanvas.height;
+    const workCtx = workCanvas.getContext('2d');
+    workCtx.drawImage(editorCanvas, 0, 0);
+    
+    // Apply filters
+    let filterString = '';
+    if (currentFilters.blur > 0) filterString += `blur(${currentFilters.blur}px) `;
+    if (currentFilters.brightness !== 100) filterString += `brightness(${currentFilters.brightness}%) `;
+    if (currentFilters.contrast !== 100) filterString += `contrast(${currentFilters.contrast}%) `;
+    if (currentFilters.saturation !== 100) filterString += `saturate(${currentFilters.saturation}%) `;
+    if (currentFilters.hue !== 0) filterString += `hue-rotate(${currentFilters.hue}deg) `;
+    if (currentFilters.sepia > 0) filterString += `sepia(${currentFilters.sepia}%) `;
+    
+    if (filterString) {
+      workCtx.filter = filterString.trim();
+      workCtx.drawImage(workCanvas, 0, 0);
+      workCtx.filter = 'none';
+    }
+    
+    // Apply crop (create new canvas with cropped dimensions)
+    let finalCanvas = workCanvas;
+    let finalCtx = workCtx;
+    
+    if (cropSettings.width < 100 || cropSettings.height < 100 || cropSettings.x > 0 || cropSettings.y > 0) {
+      const cropX = (workCanvas.width * cropSettings.x) / 100;
+      const cropY = (workCanvas.height * cropSettings.y) / 100;
+      const cropW = (workCanvas.width * cropSettings.width) / 100;
+      const cropH = (workCanvas.height * cropSettings.height) / 100;
+      
+      const croppedCanvas = document.createElement('canvas');
+      croppedCanvas.width = cropW;
+      croppedCanvas.height = cropH;
+      const croppedCtx = croppedCanvas.getContext('2d');
+      croppedCtx.drawImage(workCanvas, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+      
+      finalCanvas = croppedCanvas;
+      finalCtx = croppedCtx;
+    }
+    
+    // Draw text overlays
+    textOverlays.forEach(overlay => {
+      finalCtx.save();
+      finalCtx.font = `${overlay.bold ? 'bold ' : ''}${overlay.italic ? 'italic ' : ''}${overlay.size}px ${overlay.font}`;
+      finalCtx.fillStyle = overlay.color;
+      finalCtx.textAlign = 'center';
+      finalCtx.textBaseline = 'middle';
+      
+      if (overlay.shadow) {
+        finalCtx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+        finalCtx.shadowBlur = 10;
+        finalCtx.shadowOffsetX = 2;
+        finalCtx.shadowOffsetY = 2;
+      }
+      
+      const x = (finalCanvas.width * overlay.x) / 100;
+      const y = (finalCanvas.height * overlay.y) / 100;
+      finalCtx.fillText(overlay.text, x, y);
+      finalCtx.restore();
+    });
+    
+    // Draw final canvas to main canvas (scale if dimensions changed)
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (finalCanvas.width === canvas.width && finalCanvas.height === canvas.height) {
+      ctx.drawImage(finalCanvas, 0, 0);
+    } else {
+      // Scale to fit
+      ctx.drawImage(finalCanvas, 0, 0, canvas.width, canvas.height);
+    }
+  }
+
+  // Apply editor effects to external images
+  function applyEditorEffectsToImage() {
+    if (!editorActive || !currentWallpaper || !currentWallpaper.imageUrl || !wallpaperImage.complete) return;
+    
+    // Create a canvas from the image
+    const imgCanvas = document.createElement('canvas');
+    imgCanvas.width = currentWidth;
+    imgCanvas.height = currentHeight;
+    const imgCtx = imgCanvas.getContext('2d');
+    
+    // Draw image to canvas
+    imgCtx.drawImage(wallpaperImage, 0, 0, currentWidth, currentHeight);
+    
+    // Apply filters
+    let filterString = '';
+    if (currentFilters.blur > 0) filterString += `blur(${currentFilters.blur}px) `;
+    if (currentFilters.brightness !== 100) filterString += `brightness(${currentFilters.brightness}%) `;
+    if (currentFilters.contrast !== 100) filterString += `contrast(${currentFilters.contrast}%) `;
+    if (currentFilters.saturation !== 100) filterString += `saturate(${currentFilters.saturation}%) `;
+    if (currentFilters.hue !== 0) filterString += `hue-rotate(${currentFilters.hue}deg) `;
+    if (currentFilters.sepia > 0) filterString += `sepia(${currentFilters.sepia}%) `;
+    
+    if (filterString) {
+      imgCtx.filter = filterString.trim();
+      imgCtx.drawImage(imgCanvas, 0, 0);
+      imgCtx.filter = 'none';
+    }
+    
+    // Apply crop
+    if (cropSettings.width < 100 || cropSettings.height < 100 || cropSettings.x > 0 || cropSettings.y > 0) {
+      const cropX = (imgCanvas.width * cropSettings.x) / 100;
+      const cropY = (imgCanvas.height * cropSettings.y) / 100;
+      const cropW = (imgCanvas.width * cropSettings.width) / 100;
+      const cropH = (imgCanvas.height * cropSettings.height) / 100;
+      
+      const croppedCanvas = document.createElement('canvas');
+      croppedCanvas.width = cropW;
+      croppedCanvas.height = cropH;
+      const croppedCtx = croppedCanvas.getContext('2d');
+      croppedCtx.drawImage(imgCanvas, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+      
+      imgCanvas.width = cropW;
+      imgCanvas.height = cropH;
+      const newCtx = imgCanvas.getContext('2d');
+      newCtx.drawImage(croppedCanvas, 0, 0);
+    }
+    
+    // Draw text overlays
+    textOverlays.forEach(overlay => {
+      imgCtx.save();
+      imgCtx.font = `${overlay.bold ? 'bold ' : ''}${overlay.italic ? 'italic ' : ''}${overlay.size}px ${overlay.font}`;
+      imgCtx.fillStyle = overlay.color;
+      imgCtx.textAlign = 'center';
+      imgCtx.textBaseline = 'middle';
+      
+      if (overlay.shadow) {
+        imgCtx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+        imgCtx.shadowBlur = 10;
+        imgCtx.shadowOffsetX = 2;
+        imgCtx.shadowOffsetY = 2;
+      }
+      
+      const x = (imgCanvas.width * overlay.x) / 100;
+      const y = (imgCanvas.height * overlay.y) / 100;
+      imgCtx.fillText(overlay.text, x, y);
+      imgCtx.restore();
+    });
+    
+    // Display edited image by converting canvas to image
+    wallpaperImage.src = imgCanvas.toDataURL('image/png');
+    
+    // Also update the main canvas for consistency
+    canvas.style.display = 'block';
+    wallpaperImage.style.display = 'none';
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(imgCanvas, 0, 0, canvas.width, canvas.height);
   }
 
   // Drawing functions (keeping existing ones, adding new ones)
@@ -1720,6 +1961,10 @@
       wallpaperImage.src = currentWallpaper.imageUrl + '&sig=' + Date.now(); // Add timestamp to prevent caching
       wallpaperImage.onload = function() {
         updateFileSizeEstimate();
+        // Apply editor effects to external images
+        if (editorActive) {
+          applyEditorEffectsToImage();
+        }
       };
       wallpaperImage.onerror = function() {
         // Fallback if image fails to load
@@ -2554,6 +2799,462 @@
       });
     }
   });
+
+  // Editor functionality
+  function updateLayersList() {
+    if (!layersList) return;
+    
+    layersList.innerHTML = '';
+    
+    if (textOverlays.length === 0 && Object.values(currentFilters).every(v => v === 0 || v === 100)) {
+      layersList.innerHTML = '<div class="empty-layers">No layers added yet. Add text or effects to create layers.</div>';
+      return;
+    }
+    
+    // Add text layers
+    textOverlays.forEach((overlay, index) => {
+      const layerItem = document.createElement('div');
+      layerItem.className = 'layer-item';
+      layerItem.innerHTML = `
+        <div class="layer-icon">📝</div>
+        <div class="layer-info">
+          <div class="layer-name">Text: "${overlay.text}"</div>
+          <div class="layer-details">${overlay.size}px, ${overlay.font}</div>
+        </div>
+        <button class="remove-layer-btn" data-index="${index}">×</button>
+      `;
+      
+      const removeBtn = layerItem.querySelector('.remove-layer-btn');
+      removeBtn.addEventListener('click', () => {
+        textOverlays.splice(index, 1);
+        updateLayersList();
+        if (currentWallpaper) {
+          if (currentWallpaper.imageUrl) {
+            applyEditorEffectsToImage();
+          } else {
+            renderWallpaper(currentWallpaper.id);
+          }
+        }
+      });
+      
+      layersList.appendChild(layerItem);
+    });
+    
+    // Add filter layer if any filters are active
+    const hasFilters = Object.values(currentFilters).some((v, i) => {
+      if (i === 0) return v > 0; // blur
+      if (i === 5) return v > 0; // sepia
+      return v !== 100; // others
+    });
+    
+    if (hasFilters) {
+      const filterItem = document.createElement('div');
+      filterItem.className = 'layer-item';
+      filterItem.innerHTML = `
+        <div class="layer-icon">🎨</div>
+        <div class="layer-info">
+          <div class="layer-name">Filters</div>
+          <div class="layer-details">Applied effects</div>
+        </div>
+        <button class="remove-layer-btn" id="removeFiltersBtn">×</button>
+      `;
+      
+      const removeBtn = filterItem.querySelector('#removeFiltersBtn');
+      removeBtn.addEventListener('click', () => {
+        currentFilters = {
+          blur: 0,
+          brightness: 100,
+          contrast: 100,
+          saturation: 100,
+          hue: 0,
+          sepia: 0
+        };
+        filterBlur.value = 0;
+        blurValue.textContent = '0px';
+        filterBrightness.value = 100;
+        brightnessFilterValue.textContent = '100%';
+        filterContrast.value = 100;
+        contrastFilterValue.textContent = '100%';
+        filterSaturation.value = 100;
+        saturationFilterValue.textContent = '100%';
+        filterHue.value = 0;
+        hueFilterValue.textContent = '0°';
+        filterSepia.value = 0;
+        sepiaValue.textContent = '0%';
+        updateLayersList();
+        if (currentWallpaper) {
+          if (currentWallpaper.imageUrl) {
+            applyEditorEffectsToImage();
+          } else {
+            renderWallpaper(currentWallpaper.id);
+          }
+        }
+      });
+      
+      layersList.appendChild(filterItem);
+    }
+  }
+
+  // Editor tab switching
+  editorTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const targetTab = tab.dataset.tab;
+      
+      // Remove active class from all tabs and content
+      editorTabs.forEach(t => t.classList.remove('active'));
+      [textTab, filtersTab, cropTab, layersTab].forEach(content => {
+        if (content) content.classList.remove('active');
+      });
+      
+      // Add active class to clicked tab and corresponding content
+      tab.classList.add('active');
+      if (targetTab === 'text' && textTab) textTab.classList.add('active');
+      if (targetTab === 'filters' && filtersTab) filtersTab.classList.add('active');
+      if (targetTab === 'crop' && cropTab) cropTab.classList.add('active');
+      if (targetTab === 'layers' && layersTab) layersTab.classList.add('active');
+    });
+  });
+
+  // Editor toggle
+  if (editorToggleBtn) {
+    editorToggleBtn.addEventListener('click', () => {
+      editorActive = !editorActive;
+      if (editorSection) {
+        editorSection.style.display = editorActive ? 'block' : 'none';
+      }
+      editorToggleBtn.textContent = editorActive ? '✕ Close Editor' : '🖌️ Editor';
+      
+      if (editorActive && currentWallpaper) {
+        console.log('Editor activated');
+        if (currentWallpaper.imageUrl) {
+          // For external images, apply effects directly
+          if (wallpaperImage.complete) {
+            applyEditorEffectsToImage();
+          } else {
+            wallpaperImage.onload = () => {
+              applyEditorEffectsToImage();
+            };
+          }
+        } else {
+          // For canvas-generated, render first then apply effects
+          renderWallpaper(currentWallpaper.id);
+        }
+        updateLayersList();
+      } else if (!editorActive && currentWallpaper) {
+        console.log('Editor deactivated');
+        // When closing editor, restore original
+        if (currentWallpaper.imageUrl) {
+          wallpaperImage.src = currentWallpaper.imageUrl + '&sig=' + Date.now();
+        } else {
+          renderWallpaper(currentWallpaper.id);
+        }
+      }
+    });
+  }
+
+  // Text editor controls
+  if (textSize) {
+    textSize.addEventListener('input', (e) => {
+      if (textSizeValue) textSizeValue.textContent = e.target.value + 'px';
+    });
+  }
+
+  if (textX) {
+    textX.addEventListener('input', (e) => {
+      if (textXValue) textXValue.textContent = e.target.value + '%';
+    });
+  }
+
+  if (textY) {
+    textY.addEventListener('input', (e) => {
+      if (textYValue) textYValue.textContent = e.target.value + '%';
+    });
+  }
+
+  // Add text overlay
+  if (addTextBtn) {
+    addTextBtn.addEventListener('click', () => {
+      if (!editorText || !editorText.value.trim()) {
+        alert('Please enter some text');
+        return;
+      }
+      
+      if (!currentWallpaper) {
+        alert('Please select a wallpaper first');
+        return;
+      }
+      
+      const overlay = {
+        text: editorText.value,
+        size: parseInt(textSize ? textSize.value : 48) || 48,
+        color: textColor ? textColor.value : '#FFFFFF',
+        font: textFont ? textFont.value : 'Arial',
+        x: parseInt(textX ? textX.value : 50) || 50,
+        y: parseInt(textY ? textY.value : 50) || 50,
+        bold: textBold ? textBold.checked : false,
+        italic: textItalic ? textItalic.checked : false,
+        shadow: textShadow ? textShadow.checked : false
+      };
+      
+      textOverlays.push(overlay);
+      updateLayersList();
+      
+      // Clear text input
+      if (editorText) editorText.value = '';
+      
+      if (currentWallpaper) {
+        if (currentWallpaper.imageUrl) {
+          applyEditorEffectsToImage();
+        } else {
+          renderWallpaper(currentWallpaper.id);
+        }
+      }
+    });
+  }
+
+  // Remove text overlay
+  if (removeTextBtn) {
+    removeTextBtn.addEventListener('click', () => {
+      if (textOverlays.length > 0) {
+        textOverlays.pop();
+        updateLayersList();
+        if (currentWallpaper) {
+          if (currentWallpaper.imageUrl) {
+            applyEditorEffectsToImage();
+          } else {
+            renderWallpaper(currentWallpaper.id);
+          }
+        }
+      } else {
+        alert('No text overlays to remove');
+      }
+    });
+  }
+
+  // Filter controls
+  if (filterBlur) {
+    filterBlur.addEventListener('input', (e) => {
+      if (blurValue) blurValue.textContent = e.target.value + 'px';
+    });
+  }
+
+  if (filterBrightness) {
+    filterBrightness.addEventListener('input', (e) => {
+      if (brightnessFilterValue) brightnessFilterValue.textContent = e.target.value + '%';
+    });
+  }
+
+  if (filterContrast) {
+    filterContrast.addEventListener('input', (e) => {
+      if (contrastFilterValue) contrastFilterValue.textContent = e.target.value + '%';
+    });
+  }
+
+  if (filterSaturation) {
+    filterSaturation.addEventListener('input', (e) => {
+      if (saturationFilterValue) saturationFilterValue.textContent = e.target.value + '%';
+    });
+  }
+
+  if (filterHue) {
+    filterHue.addEventListener('input', (e) => {
+      if (hueFilterValue) hueFilterValue.textContent = e.target.value + '°';
+    });
+  }
+
+  if (filterSepia) {
+    filterSepia.addEventListener('input', (e) => {
+      if (sepiaValue) sepiaValue.textContent = e.target.value + '%';
+    });
+  }
+
+  // Apply filters
+  if (applyFiltersBtn) {
+    applyFiltersBtn.addEventListener('click', () => {
+      currentFilters = {
+        blur: parseInt(filterBlur.value) || 0,
+        brightness: parseInt(filterBrightness.value) || 100,
+        contrast: parseInt(filterContrast.value) || 100,
+        saturation: parseInt(filterSaturation.value) || 100,
+        hue: parseInt(filterHue.value) || 0,
+        sepia: parseInt(filterSepia.value) || 0
+      };
+      
+      updateLayersList();
+      if (currentWallpaper) {
+        if (currentWallpaper.imageUrl) {
+          applyEditorEffectsToImage();
+        } else {
+          renderWallpaper(currentWallpaper.id);
+        }
+      }
+    });
+  }
+
+  // Reset filters
+  if (resetFiltersBtn) {
+    resetFiltersBtn.addEventListener('click', () => {
+      currentFilters = {
+        blur: 0,
+        brightness: 100,
+        contrast: 100,
+        saturation: 100,
+        hue: 0,
+        sepia: 0
+      };
+      
+      filterBlur.value = 0;
+      blurValue.textContent = '0px';
+      filterBrightness.value = 100;
+      brightnessFilterValue.textContent = '100%';
+      filterContrast.value = 100;
+      contrastFilterValue.textContent = '100%';
+      filterSaturation.value = 100;
+      saturationFilterValue.textContent = '100%';
+      filterHue.value = 0;
+      hueFilterValue.textContent = '0°';
+      filterSepia.value = 0;
+      sepiaValue.textContent = '0%';
+      
+      updateLayersList();
+      if (currentWallpaper) {
+        if (currentWallpaper.imageUrl) {
+          applyEditorEffectsToImage();
+        } else {
+          renderWallpaper(currentWallpaper.id);
+        }
+      }
+    });
+  }
+
+  // Crop controls
+  if (cropX) {
+    cropX.addEventListener('input', (e) => {
+      if (cropXValue) cropXValue.textContent = e.target.value + '%';
+    });
+  }
+
+  if (cropY) {
+    cropY.addEventListener('input', (e) => {
+      if (cropYValue) cropYValue.textContent = e.target.value + '%';
+    });
+  }
+
+  if (cropWidth) {
+    cropWidth.addEventListener('input', (e) => {
+      if (cropWidthValue) cropWidthValue.textContent = e.target.value + '%';
+    });
+  }
+
+  if (cropHeight) {
+    cropHeight.addEventListener('input', (e) => {
+      if (cropHeightValue) cropHeightValue.textContent = e.target.value + '%';
+    });
+  }
+
+  // Apply crop
+  if (applyCropBtn) {
+    applyCropBtn.addEventListener('click', () => {
+      cropSettings = {
+        x: parseInt(cropX.value) || 0,
+        y: parseInt(cropY.value) || 0,
+        width: parseInt(cropWidth.value) || 100,
+        height: parseInt(cropHeight.value) || 100
+      };
+      
+      if (currentWallpaper) {
+        if (currentWallpaper.imageUrl) {
+          applyEditorEffectsToImage();
+        } else {
+          renderWallpaper(currentWallpaper.id);
+        }
+      }
+    });
+  }
+
+  // Reset crop
+  if (resetCropBtn) {
+    resetCropBtn.addEventListener('click', () => {
+      cropSettings = {
+        x: 0,
+        y: 0,
+        width: 100,
+        height: 100
+      };
+      
+      cropX.value = 0;
+      cropXValue.textContent = '0%';
+      cropY.value = 0;
+      cropYValue.textContent = '0%';
+      cropWidth.value = 100;
+      cropWidthValue.textContent = '100%';
+      cropHeight.value = 100;
+      cropHeightValue.textContent = '100%';
+      
+      if (currentWallpaper) {
+        if (currentWallpaper.imageUrl) {
+          applyEditorEffectsToImage();
+        } else {
+          renderWallpaper(currentWallpaper.id);
+        }
+      }
+    });
+  }
+
+  // Clear all layers
+  if (clearLayersBtn) {
+    clearLayersBtn.addEventListener('click', () => {
+      if (confirm('Clear all layers and effects?')) {
+        textOverlays = [];
+        currentFilters = {
+          blur: 0,
+          brightness: 100,
+          contrast: 100,
+          saturation: 100,
+          hue: 0,
+          sepia: 0
+        };
+        cropSettings = {
+          x: 0,
+          y: 0,
+          width: 100,
+          height: 100
+        };
+        
+        // Reset all controls
+        if (filterBlur) filterBlur.value = 0;
+        if (blurValue) blurValue.textContent = '0px';
+        if (filterBrightness) filterBrightness.value = 100;
+        if (brightnessFilterValue) brightnessFilterValue.textContent = '100%';
+        if (filterContrast) filterContrast.value = 100;
+        if (contrastFilterValue) contrastFilterValue.textContent = '100%';
+        if (filterSaturation) filterSaturation.value = 100;
+        if (saturationFilterValue) saturationFilterValue.textContent = '100%';
+        if (filterHue) filterHue.value = 0;
+        if (hueFilterValue) hueFilterValue.textContent = '0°';
+        if (filterSepia) filterSepia.value = 0;
+        if (sepiaValue) sepiaValue.textContent = '0%';
+        
+        if (cropX) cropX.value = 0;
+        if (cropXValue) cropXValue.textContent = '0%';
+        if (cropY) cropY.value = 0;
+        if (cropYValue) cropYValue.textContent = '0%';
+        if (cropWidth) cropWidth.value = 100;
+        if (cropWidthValue) cropWidthValue.textContent = '100%';
+        if (cropHeight) cropHeight.value = 100;
+        if (cropHeightValue) cropHeightValue.textContent = '100%';
+        
+        updateLayersList();
+        if (currentWallpaper) {
+          if (currentWallpaper.imageUrl) {
+            applyEditorEffectsToImage();
+          } else {
+            renderWallpaper(currentWallpaper.id);
+          }
+        }
+      }
+    });
+  }
 
   // Dark Mode Toggle Function
   function initDarkMode() {

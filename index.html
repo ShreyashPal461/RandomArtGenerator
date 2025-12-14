@@ -208,10 +208,169 @@
           </label>
         </div>
 
+        <!-- Wallpaper Editor Section -->
+        <div id="editorSection" class="editor-section" style="display:none;">
+          <h4 class="palette-title">🖌️ Wallpaper Editor</h4>
+          
+          <div class="editor-tabs">
+            <button class="editor-tab active" data-tab="text">Text</button>
+            <button class="editor-tab" data-tab="filters">Filters</button>
+            <button class="editor-tab" data-tab="crop">Crop</button>
+            <button class="editor-tab" data-tab="layers">Layers</button>
+          </div>
+
+          <!-- Text Overlay Tab -->
+          <div id="textTab" class="editor-tab-content active">
+            <div class="control-row">
+              <label class="control-label">
+                <span>Text</span>
+                <input type="text" id="editorText" class="control-input" placeholder="Enter text..." />
+              </label>
+              <label class="control-label">
+                <span>Font Size</span>
+                <input type="range" id="textSize" min="12" max="200" value="48" class="control-range" />
+                <span id="textSizeValue" class="value-display">48px</span>
+              </label>
+            </div>
+            <div class="control-row">
+              <label class="control-label">
+                <span>Text Color</span>
+                <input type="color" id="textColor" value="#FFFFFF" class="color-picker-small" />
+              </label>
+              <label class="control-label">
+                <span>Font Family</span>
+                <select id="textFont" class="control-select">
+                  <option value="Arial">Arial</option>
+                  <option value="Times New Roman">Times New Roman</option>
+                  <option value="Courier New">Courier New</option>
+                  <option value="Georgia">Georgia</option>
+                  <option value="Verdana">Verdana</option>
+                  <option value="Impact">Impact</option>
+                  <option value="Comic Sans MS">Comic Sans MS</option>
+                </select>
+              </label>
+            </div>
+            <div class="control-row">
+              <label class="control-label">
+                <span>Position X</span>
+                <input type="range" id="textX" min="0" max="100" value="50" class="control-range" />
+                <span id="textXValue" class="value-display">50%</span>
+              </label>
+              <label class="control-label">
+                <span>Position Y</span>
+                <input type="range" id="textY" min="0" max="100" value="50" class="control-range" />
+                <span id="textYValue" class="value-display">50%</span>
+              </label>
+            </div>
+            <div class="control-row">
+              <label class="control-label">
+                <input type="checkbox" id="textBold" /> <span>Bold</span>
+              </label>
+              <label class="control-label">
+                <input type="checkbox" id="textItalic" /> <span>Italic</span>
+              </label>
+              <label class="control-label">
+                <input type="checkbox" id="textShadow" /> <span>Shadow</span>
+              </label>
+            </div>
+            <div class="editor-actions">
+              <button id="addTextBtn" class="btn-outline">Add Text</button>
+              <button id="removeTextBtn" class="btn-outline">Remove Text</button>
+            </div>
+          </div>
+
+          <!-- Filters Tab -->
+          <div id="filtersTab" class="editor-tab-content">
+            <div class="control-row">
+              <label class="control-label">
+                <span>Blur</span>
+                <input type="range" id="filterBlur" min="0" max="20" value="0" class="control-range" />
+                <span id="blurValue" class="value-display">0px</span>
+              </label>
+              <label class="control-label">
+                <span>Brightness</span>
+                <input type="range" id="filterBrightness" min="0" max="200" value="100" class="control-range" />
+                <span id="brightnessFilterValue" class="value-display">100%</span>
+              </label>
+            </div>
+            <div class="control-row">
+              <label class="control-label">
+                <span>Contrast</span>
+                <input type="range" id="filterContrast" min="0" max="200" value="100" class="control-range" />
+                <span id="contrastFilterValue" class="value-display">100%</span>
+              </label>
+              <label class="control-label">
+                <span>Saturation</span>
+                <input type="range" id="filterSaturation" min="0" max="200" value="100" class="control-range" />
+                <span id="saturationFilterValue" class="value-display">100%</span>
+              </label>
+            </div>
+            <div class="control-row">
+              <label class="control-label">
+                <span>Hue Rotate</span>
+                <input type="range" id="filterHue" min="0" max="360" value="0" class="control-range" />
+                <span id="hueFilterValue" class="value-display">0°</span>
+              </label>
+              <label class="control-label">
+                <span>Sepia</span>
+                <input type="range" id="filterSepia" min="0" max="100" value="0" class="control-range" />
+                <span id="sepiaValue" class="value-display">0%</span>
+              </label>
+            </div>
+            <div class="editor-actions">
+              <button id="applyFiltersBtn" class="btn-outline">Apply Filters</button>
+              <button id="resetFiltersBtn" class="btn-outline">Reset Filters</button>
+            </div>
+          </div>
+
+          <!-- Crop Tab -->
+          <div id="cropTab" class="editor-tab-content">
+            <div class="control-row">
+              <label class="control-label">
+                <span>Crop X</span>
+                <input type="range" id="cropX" min="0" max="100" value="0" class="control-range" />
+                <span id="cropXValue" class="value-display">0%</span>
+              </label>
+              <label class="control-label">
+                <span>Crop Y</span>
+                <input type="range" id="cropY" min="0" max="100" value="0" class="control-range" />
+                <span id="cropYValue" class="value-display">0%</span>
+              </label>
+            </div>
+            <div class="control-row">
+              <label class="control-label">
+                <span>Crop Width</span>
+                <input type="range" id="cropWidth" min="10" max="100" value="100" class="control-range" />
+                <span id="cropWidthValue" class="value-display">100%</span>
+              </label>
+              <label class="control-label">
+                <span>Crop Height</span>
+                <input type="range" id="cropHeight" min="10" max="100" value="100" class="control-range" />
+                <span id="cropHeightValue" class="value-display">100%</span>
+              </label>
+            </div>
+            <div class="editor-actions">
+              <button id="applyCropBtn" class="btn-outline">Apply Crop</button>
+              <button id="resetCropBtn" class="btn-outline">Reset Crop</button>
+            </div>
+          </div>
+
+          <!-- Layers Tab -->
+          <div id="layersTab" class="editor-tab-content">
+            <div id="layersList" class="layers-list">
+              <div class="empty-layers">No layers added yet. Add text or effects to create layers.</div>
+            </div>
+            <div class="editor-actions">
+              <button id="clearLayersBtn" class="btn-outline">Clear All Layers</button>
+            </div>
+          </div>
+        </div>
+
         <div class="action-buttons">
           <button id="generateBtn" class="btn-primary">Generate</button>
           <button id="downloadBtn" class="btn-secondary">Download 4K</button>
           <button id="previewBtn" class="btn-secondary">Preview</button>
+          <button id="editorToggleBtn" class="btn-outline">🖌️ Editor</button>
           <button id="favoriteBtn" class="btn-outline">
             <span id="favoriteIcon">☆</span> <span id="favoriteText">Add to Favorites</span>
           </button>
