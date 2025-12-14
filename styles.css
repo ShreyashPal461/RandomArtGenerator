@@ -71,8 +71,9 @@ body>*{position:relative;z-index:1}
 .tab-btn::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);transition:left 0.5s}
 .tab-btn:hover::before{left:100%}
 .tab-btn:hover{background:rgba(0,245,212,0.15);border-color:var(--accent);transform:translateY(-3px) scale(1.05);box-shadow:0 8px 25px rgba(0,245,212,0.4), 0 0 20px rgba(0,245,212,0.2)}
-.tab-btn.active{background:linear-gradient(135deg,var(--accent),var(--accent2),var(--accent3));background-size:200% 200%;animation:gradientMove 3s ease infinite;color:#000;border-color:transparent;box-shadow:0 6px 25px rgba(0,245,212,0.5), 0 0 30px rgba(123,44,191,0.4), inset 0 1px 0 rgba(255,255,255,0.3);transform:scale(1.05);font-weight:700}
+.tab-btn.active{background:linear-gradient(135deg,var(--accent),var(--accent2),var(--accent3));background-size:200% 200%;animation:gradientMove 3s ease infinite;color:#000;border-color:transparent;box-shadow:0 6px 25px rgba(0,245,212,0.5), 0 0 30px rgba(123,44,191,0.4), inset 0 1px 0 rgba(255,255,255,0.3);transform:scale(1.05);font-weight:700;position:relative}
 @keyframes gradientMove{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+.favorites-badge{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;background:rgba(255,215,0,0.9);color:#000;border-radius:10px;font-size:11px;font-weight:700;margin-left:8px;box-shadow:0 2px 8px rgba(255,215,0,0.4);animation:pulse 2s ease-in-out infinite}
 
 /* Wallpaper Grid */
 .wallpaper-grid-section{margin-bottom:50px}
@@ -82,6 +83,8 @@ body>*{position:relative;z-index:1}
 .wallpaper-item:hover{transform:translateY(-8px) scale(1.02)}
 .wallpaper-thumbnail{position:relative;aspect-ratio:16/9;background:linear-gradient(135deg, var(--accent), var(--accent2), var(--accent3));background-size:200% 200%;animation:gradientMove 5s ease infinite;border-radius:20px;border:2px solid var(--border);overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,0.5), 0 0 20px rgba(0,245,212,0.2);transition:all 0.4s}
 .wallpaper-item:hover .wallpaper-thumbnail{box-shadow:0 20px 60px rgba(0,245,212,0.4), 0 0 40px rgba(123,44,191,0.3), inset 0 0 30px rgba(255,255,255,0.1);border-color:var(--accent)}
+.favorite-indicator{position:absolute;top:12px;right:12px;width:36px;height:36px;background:rgba(0,0,0,0.7);backdrop-filter:blur(10px);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;color:#FFD700;z-index:10;box-shadow:0 4px 12px rgba(0,0,0,0.4), 0 0 15px rgba(255,215,0,0.5);animation:pulse 2s ease-in-out infinite;pointer-events:none}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.1);opacity:0.9}}
 .wallpaper-icon{position:absolute;top:50%;left:50%;transform:translate(-50%, -50%);font-size:72px;opacity:0.9;filter:drop-shadow(0 0 20px rgba(0,245,212,0.5));transition:all 0.4s;z-index:1}
 .wallpaper-item:hover .wallpaper-icon{transform:translate(-50%, -50%) scale(1.2) rotate(5deg);filter:drop-shadow(0 0 30px rgba(0,245,212,0.8))}
 .wallpaper-overlay{position:absolute;bottom:0;left:0;right:0;padding:24px;background:linear-gradient(to top, rgba(0,0,0,0.95), rgba(0,0,0,0.7), transparent);color:#fff;opacity:0;transition:all 0.4s;transform:translateY(20px)}
@@ -152,6 +155,8 @@ body>*{position:relative;z-index:1}
 .btn-outline::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg, transparent, rgba(0,245,212,0.2), transparent);transition:left 0.5s}
 .btn-outline:hover::before{left:100%}
 .btn-outline:hover{background:rgba(0,245,212,0.15);transform:translateY(-3px);box-shadow:0 8px 25px rgba(0,245,212,0.4), 0 0 30px rgba(0,245,212,0.3)}
+.btn-outline.is-favorite{background:rgba(255,215,0,0.15);border-color:#FFD700;color:#FFD700}
+.btn-outline.is-favorite:hover{background:rgba(255,215,0,0.25);box-shadow:0 8px 25px rgba(255,215,0,0.4), 0 0 30px rgba(255,215,0,0.3)}
 .btn-icon{background:rgba(255,255,255,0.1);border:2px solid var(--border);color:var(--text-color);width:48px;height:48px;border-radius:12px;cursor:pointer;font-size:20px;transition:all 0.4s;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(10px)}
 :root.light-mode .btn-icon{background:rgba(0,0,0,0.05);color:#1f2937}
 .btn-icon:hover{background:rgba(0,245,212,0.2);border-color:var(--accent);transform:scale(1.1) rotate(5deg);box-shadow:0 8px 25px rgba(0,245,212,0.4), 0 0 20px rgba(0,245,212,0.3)}
@@ -210,8 +215,15 @@ canvas{max-width:70%;height:auto;display:none;border-radius:12px;box-shadow:0 10
   canvas{max-width:100%}
 }
 
+/* Empty State */
+.empty-state{grid-column:1/-1;text-align:center;padding:80px 20px;color:var(--muted)}
+.empty-icon{font-size:80px;margin-bottom:20px;opacity:0.6;filter:drop-shadow(0 0 20px rgba(0,245,212,0.3));animation:float 3s ease-in-out infinite}
+.empty-state h3{margin:0 0 12px;font-size:24px;color:var(--text-color);font-weight:600}
+.empty-state p{margin:0;font-size:16px;opacity:0.8;line-height:1.6}
+
 @media (max-width:480px){
   .wallpaper-grid{grid-template-columns:1fr}
   .header h1{font-size:28px}
   .section-title{font-size:24px}
+  .favorite-indicator{width:28px;height:28px;font-size:16px;top:8px;right:8px}
 }

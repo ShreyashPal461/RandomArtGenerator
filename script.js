@@ -54,6 +54,7 @@
   const resetColorsBtn = document.getElementById('resetColorsBtn');
   const addColorBtn = document.getElementById('addColorBtn');
   const resetAdjustmentsBtn = document.getElementById('resetAdjustmentsBtn');
+  const favoriteBtn = document.getElementById('favoriteBtn');
 
   // Resolution presets
   const resolutions = {
@@ -160,6 +161,107 @@
   let currentWidth = 3840;
   let currentHeight = 2160;
   let activeCategory = 'all';
+  let favorites = [];
+
+  // Favorites management
+  function loadFavorites() {
+    try {
+      const saved = localStorage.getItem('wallpaperFavorites');
+      favorites = saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      console.error('Error loading favorites:', e);
+      favorites = [];
+    }
+  }
+
+  function saveFavorites() {
+    try {
+      localStorage.setItem('wallpaperFavorites', JSON.stringify(favorites));
+    } catch (e) {
+      console.error('Error saving favorites:', e);
+    }
+  }
+
+  function isFavorite(wallpaperId) {
+    return favorites.includes(wallpaperId);
+  }
+
+  function addToFavorites(wallpaperId) {
+    if (!isFavorite(wallpaperId)) {
+      favorites.push(wallpaperId);
+      saveFavorites();
+      updateFavoriteUI();
+      return true;
+    }
+    return false;
+  }
+
+  function removeFromFavorites(wallpaperId) {
+    const index = favorites.indexOf(wallpaperId);
+    if (index > -1) {
+      favorites.splice(index, 1);
+      saveFavorites();
+      updateFavoriteUI();
+      return true;
+    }
+    return false;
+  }
+
+  function toggleFavorite(wallpaperId) {
+    if (isFavorite(wallpaperId)) {
+      removeFromFavorites(wallpaperId);
+      updateFavoritesBadge();
+      return false;
+    } else {
+      addToFavorites(wallpaperId);
+      updateFavoritesBadge();
+      return true;
+    }
+  }
+
+  function updateFavoriteUI() {
+    if (!currentWallpaper) return;
+    
+    const favoriteBtn = document.getElementById('favoriteBtn');
+    const favoriteIcon = document.getElementById('favoriteIcon');
+    const favoriteText = document.getElementById('favoriteText');
+    
+    if (isFavorite(currentWallpaper.id)) {
+      favoriteIcon.textContent = '★';
+      favoriteText.textContent = 'Remove from Favorites';
+      favoriteBtn.classList.add('is-favorite');
+    } else {
+      favoriteIcon.textContent = '☆';
+      favoriteText.textContent = 'Add to Favorites';
+      favoriteBtn.classList.remove('is-favorite');
+    }
+    
+    // Update favorite indicators in grid
+    updateFavoriteIndicators();
+  }
+
+  function updateFavoriteIndicators() {
+    const wallpaperItems = document.querySelectorAll('.wallpaper-item');
+    wallpaperItems.forEach(item => {
+      const wallpaperId = item.querySelector('.wallpaper-thumbnail')?.dataset.id;
+      if (wallpaperId) {
+        const favoriteIndicator = item.querySelector('.favorite-indicator');
+        if (isFavorite(wallpaperId)) {
+          if (!favoriteIndicator) {
+            const indicator = document.createElement('div');
+            indicator.className = 'favorite-indicator';
+            indicator.innerHTML = '★';
+            indicator.title = 'In favorites';
+            item.querySelector('.wallpaper-thumbnail').appendChild(indicator);
+          }
+        } else {
+          if (favoriteIndicator) {
+            favoriteIndicator.remove();
+          }
+        }
+      }
+    });
+  }
 
   // Seeded RNG
   function RNG(seed) {
@@ -1266,13 +1368,33 @@
   // Build wallpaper grid
   function buildWallpaperGrid(category = 'all') {
     wallpaperGrid.innerHTML = '';
-    const filtered = category === 'all' ? wallpapers : wallpapers.filter(w => w.category === category);
+    let filtered;
+    
+    if (category === 'favorites') {
+      filtered = wallpapers.filter(w => favorites.includes(w.id));
+      if (filtered.length === 0) {
+        wallpaperGrid.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">⭐</div>
+            <h3>No favorites yet</h3>
+            <p>Start adding wallpapers to your favorites to see them here!</p>
+          </div>
+        `;
+        return;
+      }
+    } else if (category === 'all') {
+      filtered = wallpapers;
+    } else {
+      filtered = wallpapers.filter(w => w.category === category);
+    }
     
     filtered.forEach(wallpaper => {
       const item = document.createElement('div');
       item.className = 'wallpaper-item';
+      const isFav = isFavorite(wallpaper.id);
       item.innerHTML = `
         <div class="wallpaper-thumbnail" data-id="${wallpaper.id}">
+          ${isFav ? '<div class="favorite-indicator" title="In favorites">★</div>' : ''}
           <div class="wallpaper-icon">${wallpaper.icon}</div>
           <div class="wallpaper-overlay">
             <div class="wallpaper-name">${wallpaper.name}</div>
@@ -1280,7 +1402,8 @@
           </div>
         </div>
       `;
-      item.querySelector('.wallpaper-thumbnail').addEventListener('click', () => {
+      const thumbnail = item.querySelector('.wallpaper-thumbnail');
+      thumbnail.addEventListener('click', () => {
         selectWallpaper(wallpaper.id);
       });
       wallpaperGrid.appendChild(item);
@@ -1294,6 +1417,7 @@
     controlsPanel.style.display = 'block';
     canvasPlaceholder.style.display = 'none';
     updateColorPreview();
+    updateFavoriteUI();
     
     // Check if wallpaper has a real image URL
     if (currentWallpaper.imageUrl) {
@@ -1341,6 +1465,36 @@
       animationFrame = requestAnimationFrame(animate);
     } else {
       cancelAnimationFrame(animationFrame);
+    }
+  }
+
+  // Favorite button event listener
+  favoriteBtn.addEventListener('click', () => {
+    if (currentWallpaper) {
+      toggleFavorite(currentWallpaper.id);
+      // If viewing favorites and removed, refresh grid
+      if (activeCategory === 'favorites' && !isFavorite(currentWallpaper.id)) {
+        buildWallpaperGrid('favorites');
+      }
+    }
+  });
+
+  // Update favorites count badge
+  function updateFavoritesBadge() {
+    const favoritesTab = document.querySelector('[data-category="favorites"]');
+    if (favoritesTab) {
+      let badge = favoritesTab.querySelector('.favorites-badge');
+      if (!badge) {
+        badge = document.createElement('span');
+        badge.className = 'favorites-badge';
+        favoritesTab.appendChild(badge);
+      }
+      badge.textContent = favorites.length;
+      if (favorites.length === 0) {
+        badge.style.display = 'none';
+      } else {
+        badge.style.display = 'inline-flex';
+      }
     }
   }
 
@@ -1741,9 +1895,12 @@
   darkModeToggle.addEventListener('click', toggleDarkMode);
 
   // Initialize
+  loadFavorites();
   setCanvasResolution(3840, 2160);
   buildWallpaperGrid('all');
   initDarkMode();
   setupColorPickers();
   updateColorPreview();
+  updateFavoriteIndicators();
+  updateFavoritesBadge();
 })();
