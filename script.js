@@ -1659,32 +1659,240 @@
 
   // Download handler with format support
   downloadBtn.addEventListener('click', async () => {
-    if (!currentWallpaper) return;
-
-    const format = exportFormatSelect.value;
-    const quality = format === 'png' ? undefined : parseFloat(qualityInput.value);
-    const extension = formatExtensions[format];
-    const mimeType = formatMimeTypes[format];
+    console.log('Download button clicked');
     
-    const link = document.createElement('a');
-    link.download = `wallpaper-${currentWallpaper.id}-${currentWidth}x${currentHeight}.${extension}`;
+    if (!currentWallpaper) {
+      alert('Please select a wallpaper first');
+      return;
+    }
+
+    // Get format settings with fallbacks
+    let format = 'png';
+    let quality = undefined;
+    let extension = 'png';
+    let mimeType = 'image/png';
     
     try {
-      if (currentWallpaper.imageUrl && wallpaperImage.complete) {
-        // For real images, convert to selected format
-        const dataUrl = await convertImageToFormat(wallpaperImage, format, quality);
-        link.href = dataUrl;
-      } else {
-        // For canvas-generated wallpapers
-        link.href = canvas.toDataURL(mimeType, quality);
+      if (exportFormatSelect) {
+        format = exportFormatSelect.value || 'png';
       }
+      if (format !== 'png' && qualityInput) {
+        quality = parseFloat(qualityInput.value) || 0.92;
+      }
+      extension = formatExtensions[format] || 'png';
+      mimeType = formatMimeTypes[format] || 'image/png';
+    } catch (e) {
+      console.warn('Error reading format settings, using PNG:', e);
+      format = 'png';
+      extension = 'png';
+      mimeType = 'image/png';
+    }
+    
+    console.log('Download settings:', { format, quality, extension, mimeType });
+    
+    // Create download link
+    const link = document.createElement('a');
+    link.style.display = 'none';
+    const fileName = `wallpaper-${currentWallpaper.id}-${currentWidth}x${currentHeight}.${extension}`;
+    link.download = fileName;
+    
+    try {
+      let dataUrl = null;
+      
+      // Check if we have an external image
+      if (currentWallpaper.imageUrl) {
+        console.log('Processing external image');
+        
+        // Wait for image to load if not ready
+        if (!wallpaperImage.complete || wallpaperImage.naturalWidth === 0) {
+          console.log('Waiting for image to load...');
+          await new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => {
+              reject(new Error('Image load timeout'));
+            }, 5000);
+            
+            wallpaperImage.onload = () => {
+              clearTimeout(timeout);
+              resolve();
+            };
+            wallpaperImage.onerror = () => {
+              clearTimeout(timeout);
+              reject(new Error('Image load failed'));
+            };
+            
+            // If already loaded, resolve immediately
+            if (wallpaperImage.complete && wallpaperImage.naturalWidth > 0) {
+              clearTimeout(timeout);
+              resolve();
+            }
+          });
+        }
+        
+        // Convert external image to selected format
+        try {
+          console.log('Image dimensions:', wallpaperImage.naturalWidth, 'x', wallpaperImage.naturalHeight);
+          
+          // Create a canvas with the correct resolution
+          const tempCanvas = document.createElement('canvas');
+          tempCanvas.width = currentWidth;
+          tempCanvas.height = currentHeight;
+          const tempCtx = tempCanvas.getContext('2d');
+          
+          // Draw image scaled to target resolution
+          tempCtx.drawImage(wallpaperImage, 0, 0, currentWidth, currentHeight);
+          
+          // Export in selected format
+          if (format === 'webp') {
+            try {
+              const testCanvas = document.createElement('canvas');
+              testCanvas.width = 1;
+              testCanvas.height = 1;
+              const testDataUrl = testCanvas.toDataURL('image/webp');
+              if (!testDataUrl || testDataUrl.indexOf('data:image/webp') === -1) {
+                throw new Error('WebP not supported');
+              }
+              dataUrl = tempCanvas.toDataURL('image/webp', quality);
+            } catch (webpError) {
+              console.warn('WebP not supported, using PNG');
+              dataUrl = tempCanvas.toDataURL('image/png');
+              link.download = fileName.replace(/\.webp$/i, '.png');
+            }
+          } else {
+            dataUrl = tempCanvas.toDataURL(mimeType, quality);
+          }
+          
+          console.log('Image converted successfully, data length:', dataUrl.length);
+        } catch (conversionError) {
+          console.warn('Format conversion failed, using PNG:', conversionError);
+          // Fallback: create canvas from image
+          const tempCanvas = document.createElement('canvas');
+          tempCanvas.width = wallpaperImage.naturalWidth || wallpaperImage.width || currentWidth;
+          tempCanvas.height = wallpaperImage.naturalHeight || wallpaperImage.height || currentHeight;
+          const tempCtx = tempCanvas.getContext('2d');
+          tempCtx.drawImage(wallpaperImage, 0, 0);
+          dataUrl = tempCanvas.toDataURL('image/png');
+          link.download = fileName.replace(/\.(jpg|webp)$/i, '.png');
+        }
+      } 
+      // Check if we have a canvas-generated wallpaper
+      else if (canvas && canvas.width > 0 && canvas.height > 0) {
+        console.log('Processing canvas-generated wallpaper');
+        console.log('Canvas dimensions:', canvas.width, 'x', canvas.height);
+        console.log('Target dimensions:', currentWidth, 'x', currentHeight);
+        
+        // Ensure canvas is visible and rendered
+        canvas.style.display = 'block';
+        
+        // Force render if not already rendered
+        if (currentWallpaper && !currentWallpaper.imageUrl) {
+          console.log('Rendering wallpaper before download');
+          renderWallpaper(currentWallpaper.id, Date.now());
+          // Wait longer for rendering to complete
+          await new Promise(resolve => setTimeout(resolve, 300));
+        }
+        
+        // Create a new canvas at the exact target resolution for export
+        // This ensures we get the correct dimensions regardless of DPR
+        const exportCanvas = document.createElement('canvas');
+        exportCanvas.width = currentWidth;
+        exportCanvas.height = currentHeight;
+        const exportCtx = exportCanvas.getContext('2d');
+        
+        // Draw the main canvas to the export canvas, scaling if needed
+        exportCtx.drawImage(canvas, 0, 0, currentWidth, currentHeight);
+        
+        console.log('Export canvas created:', exportCanvas.width, 'x', exportCanvas.height);
+        
+        // Check WebP support if needed
+        if (format === 'webp') {
+          try {
+            const testCanvas = document.createElement('canvas');
+            testCanvas.width = 1;
+            testCanvas.height = 1;
+            const testDataUrl = testCanvas.toDataURL('image/webp');
+            if (!testDataUrl || testDataUrl.indexOf('data:image/webp') === -1) {
+              throw new Error('WebP not supported');
+            }
+            dataUrl = exportCanvas.toDataURL('image/webp', quality);
+            console.log('WebP export successful, data length:', dataUrl.length);
+          } catch (webpError) {
+            console.warn('WebP not supported, falling back to PNG');
+            dataUrl = exportCanvas.toDataURL('image/png');
+            link.download = fileName.replace(/\.webp$/i, '.png');
+          }
+        } else {
+          // PNG or JPG
+          try {
+            dataUrl = exportCanvas.toDataURL(mimeType, quality);
+            console.log('Canvas export successful, data length:', dataUrl.length);
+            
+            // Verify data URL is valid
+            if (!dataUrl || dataUrl.length < 100 || !dataUrl.startsWith('data:image/')) {
+              throw new Error('Invalid data URL generated');
+            }
+          } catch (exportError) {
+            console.warn('Canvas export failed, trying PNG:', exportError);
+            dataUrl = exportCanvas.toDataURL('image/png');
+            link.download = fileName.replace(/\.(jpg|webp)$/i, '.png');
+          }
+        }
+      } 
+      else {
+        console.error('No valid wallpaper source available');
+        alert('Wallpaper is not ready. Please wait for it to load or click Generate first.');
+        return;
+      }
+      
+      if (!dataUrl || dataUrl.length < 100) {
+        throw new Error('Failed to generate download data - data URL too short or empty');
+      }
+      
+      console.log('Data URL generated, length:', dataUrl.length);
+      
+      // Set href and trigger download
+      link.href = dataUrl;
+      
+      // Append to DOM (required for some browsers)
+      document.body.appendChild(link);
+      
+      // Trigger download
       link.click();
+      console.log('Download triggered');
+      
+      // Clean up after download
+      setTimeout(() => {
+        if (link.parentNode) {
+          document.body.removeChild(link);
+        }
+        // Note: revokeObjectURL only works with blob URLs, not data URLs
+      }, 200);
+      
     } catch (error) {
-      console.error('Error downloading image:', error);
-      // Fallback to PNG
-      link.href = canvas.toDataURL('image/png');
-      link.download = `wallpaper-${currentWallpaper.id}-${currentWidth}x${currentHeight}.png`;
-      link.click();
+      console.error('Download error:', error);
+      
+      // Final fallback: try PNG from canvas
+      try {
+        if (canvas && canvas.width > 0 && canvas.height > 0) {
+          console.log('Attempting PNG fallback');
+          const fallbackDataUrl = canvas.toDataURL('image/png');
+          if (fallbackDataUrl && fallbackDataUrl.length > 100) {
+            link.href = fallbackDataUrl;
+            link.download = fileName.replace(/\.(jpg|webp)$/i, '.png');
+            document.body.appendChild(link);
+            link.click();
+            setTimeout(() => {
+              if (link.parentNode) {
+                document.body.removeChild(link);
+              }
+            }, 200);
+            return;
+          }
+        }
+      } catch (fallbackError) {
+        console.error('Fallback also failed:', fallbackError);
+      }
+      
+      alert('Failed to download wallpaper. Error: ' + error.message + '\n\nPlease try:\n1. Click Generate first\n2. Select PNG format\n3. Check browser console for details');
     }
   });
 
@@ -2033,12 +2241,21 @@
   updateFavoritesBadge();
   
   // Initialize export format UI
-  const format = exportFormatSelect.value;
-  if (format === 'png') {
-    qualityLabel.style.display = 'none';
-  } else {
-    qualityLabel.style.display = 'flex';
+  if (exportFormatSelect) {
+    const format = exportFormatSelect.value;
+    if (format === 'png') {
+      if (qualityLabel) qualityLabel.style.display = 'none';
+    } else {
+      if (qualityLabel) qualityLabel.style.display = 'flex';
+    }
   }
   updateFileSizeEstimate();
+  
+  // Verify download button is ready
+  if (downloadBtn) {
+    console.log('Download button initialized successfully');
+  } else {
+    console.error('Download button not found!');
+  }
 })();
 
