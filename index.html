@@ -185,6 +185,29 @@
           <div id="colorPreview" class="color-preview"></div>
         </div>
 
+        <!-- Export Format Controls -->
+        <div class="control-row">
+          <label class="control-label">
+            <span>Export Format</span>
+            <select id="exportFormat" class="control-select">
+              <option value="png" selected>PNG (Lossless)</option>
+              <option value="jpg">JPG (Compressed)</option>
+              <option value="webp">WebP (Modern)</option>
+            </select>
+          </label>
+
+          <label class="control-label" id="qualityLabel" style="display:none;">
+            <span>Quality</span>
+            <input id="quality" type="range" min="0.1" max="1" step="0.05" value="0.92" class="control-range" />
+            <span id="qualityValue" class="value-display">92%</span>
+          </label>
+
+          <label class="control-label">
+            <span>Estimated Size</span>
+            <div id="fileSizeEstimate" class="file-size-display">--</div>
+          </label>
+        </div>
+
         <div class="action-buttons">
           <button id="generateBtn" class="btn-primary">Generate</button>
           <button id="downloadBtn" class="btn-secondary">Download 4K</button>

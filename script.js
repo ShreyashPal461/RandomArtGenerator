@@ -222,7 +222,6 @@
   function updateFavoriteUI() {
     if (!currentWallpaper) return;
     
-    const favoriteBtn = document.getElementById('favoriteBtn');
     const favoriteIcon = document.getElementById('favoriteIcon');
     const favoriteText = document.getElementById('favoriteText');
     
@@ -1419,18 +1418,31 @@
     updateColorPreview();
     updateFavoriteUI();
     
+    // Update file size estimate after image loads
+    if (currentWallpaper.imageUrl) {
+      wallpaperImage.onload = () => {
+        updateFileSizeEstimate();
+      };
+    } else {
+      updateFileSizeEstimate();
+    }
+    
     // Check if wallpaper has a real image URL
     if (currentWallpaper.imageUrl) {
       // Display real image
       canvas.style.display = 'none';
       wallpaperImage.style.display = 'block';
       wallpaperImage.src = currentWallpaper.imageUrl + '&sig=' + Date.now(); // Add timestamp to prevent caching
+      wallpaperImage.onload = function() {
+        updateFileSizeEstimate();
+      };
       wallpaperImage.onerror = function() {
         // Fallback if image fails to load
         console.error('Image failed to load, using fallback');
         this.style.display = 'none';
         canvas.style.display = 'block';
         renderWallpaper(wallpaperId);
+        updateFileSizeEstimate();
       };
       // Hide animation controls for real images
       playPauseBtn.style.display = 'none';
@@ -1526,12 +1538,14 @@
     if (currentWallpaper && !currentWallpaper.imageUrl) {
       renderWallpaper(currentWallpaper.id);
     }
+    updateFileSizeEstimate();
   });
 
   customWidthInput.addEventListener('input', () => {
     if (resolutionSelect.value === 'custom') {
       setCanvasResolution(customWidthInput.value, customHeightInput.value);
       if (currentWallpaper) renderWallpaper(currentWallpaper.id);
+      updateFileSizeEstimate();
     }
   });
 
@@ -1539,6 +1553,7 @@
     if (resolutionSelect.value === 'custom') {
       setCanvasResolution(customWidthInput.value, customHeightInput.value);
       if (currentWallpaper) renderWallpaper(currentWallpaper.id);
+      updateFileSizeEstimate();
     }
   });
 
@@ -1555,27 +1570,140 @@
       if (currentWallpaper.imageUrl) {
         // Reload image with new timestamp
         wallpaperImage.src = currentWallpaper.imageUrl + '&sig=' + Date.now();
+        wallpaperImage.onload = () => {
+          updateFileSizeEstimate();
+        };
       } else {
         particleSystem = null;
         renderWallpaper(currentWallpaper.id);
+        updateFileSizeEstimate();
       }
     }
   });
 
-  downloadBtn.addEventListener('click', () => {
-    if (currentWallpaper) {
-      const link = document.createElement('a');
-      link.download = `wallpaper-${currentWallpaper.id}-${currentWidth}x${currentHeight}.png`;
+  // Format-specific MIME types
+  const formatMimeTypes = {
+    png: 'image/png',
+    jpg: 'image/jpeg',
+    webp: 'image/webp'
+  };
+
+  // Format-specific file extensions
+  const formatExtensions = {
+    png: 'png',
+    jpg: 'jpg',
+    webp: 'webp'
+  };
+
+  // Convert image to format
+  function convertImageToFormat(imageElement, format, quality) {
+    return new Promise((resolve) => {
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = imageElement.naturalWidth || imageElement.width;
+      tempCanvas.height = imageElement.naturalHeight || imageElement.height;
+      const tempCtx = tempCanvas.getContext('2d');
+      tempCtx.drawImage(imageElement, 0, 0);
       
+      const mimeType = formatMimeTypes[format];
+      const dataUrl = tempCanvas.toDataURL(mimeType, quality);
+      resolve(dataUrl);
+    });
+  }
+
+  // Estimate file size
+  function estimateFileSize(dataUrl) {
+    // Base64 encoding increases size by ~33%, so we estimate from the data URL length
+    const base64Length = dataUrl.length - (dataUrl.indexOf(',') + 1);
+    const sizeInBytes = (base64Length * 3) / 4;
+    return sizeInBytes;
+  }
+
+  // Format file size for display
+  function formatFileSize(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+  }
+
+  // Update file size estimate
+  function updateFileSizeEstimate() {
+    if (!currentWallpaper) {
+      fileSizeEstimate.textContent = '--';
+      return;
+    }
+
+    const format = exportFormatSelect.value;
+    const quality = format === 'png' ? undefined : parseFloat(qualityInput.value);
+
+    // Create a temporary canvas to estimate size
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = currentWidth;
+    tempCanvas.height = currentHeight;
+    const tempCtx = tempCanvas.getContext('2d');
+
+    if (currentWallpaper.imageUrl && wallpaperImage.complete) {
+      // For real images, draw to temp canvas first
+      tempCtx.drawImage(wallpaperImage, 0, 0, currentWidth, currentHeight);
+    } else {
+      // For generated wallpapers, copy from main canvas
+      tempCtx.drawImage(canvas, 0, 0);
+    }
+
+    const mimeType = formatMimeTypes[format];
+    const dataUrl = tempCanvas.toDataURL(mimeType, quality);
+    const size = estimateFileSize(dataUrl);
+    fileSizeEstimate.textContent = formatFileSize(size);
+  }
+
+  // Download handler with format support
+  downloadBtn.addEventListener('click', async () => {
+    if (!currentWallpaper) return;
+
+    const format = exportFormatSelect.value;
+    const quality = format === 'png' ? undefined : parseFloat(qualityInput.value);
+    const extension = formatExtensions[format];
+    const mimeType = formatMimeTypes[format];
+    
+    const link = document.createElement('a');
+    link.download = `wallpaper-${currentWallpaper.id}-${currentWidth}x${currentHeight}.${extension}`;
+    
+    try {
       if (currentWallpaper.imageUrl && wallpaperImage.complete) {
-        // Download real image
-        link.href = wallpaperImage.src;
+        // For real images, convert to selected format
+        const dataUrl = await convertImageToFormat(wallpaperImage, format, quality);
+        link.href = dataUrl;
       } else {
-        // Download canvas image
-        link.href = canvas.toDataURL('image/png');
+        // For canvas-generated wallpapers
+        link.href = canvas.toDataURL(mimeType, quality);
       }
       link.click();
+    } catch (error) {
+      console.error('Error downloading image:', error);
+      // Fallback to PNG
+      link.href = canvas.toDataURL('image/png');
+      link.download = `wallpaper-${currentWallpaper.id}-${currentWidth}x${currentHeight}.png`;
+      link.click();
     }
+  });
+
+  // Format change handler
+  exportFormatSelect.addEventListener('change', () => {
+    const format = exportFormatSelect.value;
+    if (format === 'png') {
+      qualityLabel.style.display = 'none';
+    } else {
+      qualityLabel.style.display = 'flex';
+    }
+    updateFileSizeEstimate();
+  });
+
+  // Quality change handler
+  qualityInput.addEventListener('input', (e) => {
+    const quality = parseFloat(e.target.value);
+    qualityValue.textContent = Math.round(quality * 100) + '%';
+    updateFileSizeEstimate();
   });
 
   previewBtn.addEventListener('click', () => {
@@ -1903,4 +2031,14 @@
   updateColorPreview();
   updateFavoriteIndicators();
   updateFavoritesBadge();
+  
+  // Initialize export format UI
+  const format = exportFormatSelect.value;
+  if (format === 'png') {
+    qualityLabel.style.display = 'none';
+  } else {
+    qualityLabel.style.display = 'flex';
+  }
+  updateFileSizeEstimate();
 })();
+
