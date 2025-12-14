@@ -103,8 +103,85 @@
               <option value="neon">Neon</option>
               <option value="warm">Warm</option>
               <option value="cool">Cool</option>
+              <option value="sunset">Sunset</option>
+              <option value="ocean">Ocean</option>
+              <option value="forest">Forest</option>
+              <option value="autumn">Autumn</option>
+              <option value="spring">Spring</option>
+              <option value="monochrome">Monochrome</option>
+              <option value="rainbow">Rainbow</option>
+              <option value="custom">Custom Palette</option>
             </select>
           </label>
+        </div>
+
+        <!-- Color Adjustment Controls -->
+        <div class="control-row">
+          <label class="control-label">
+            <span>Brightness</span>
+            <input id="brightness" type="range" min="0" max="200" value="100" class="control-range" />
+            <span id="brightnessValue" class="value-display">100%</span>
+          </label>
+
+          <label class="control-label">
+            <span>Saturation</span>
+            <input id="saturation" type="range" min="0" max="200" value="100" class="control-range" />
+            <span id="saturationValue" class="value-display">100%</span>
+          </label>
+
+          <label class="control-label">
+            <span>Contrast</span>
+            <input id="contrast" type="range" min="0" max="200" value="100" class="control-range" />
+            <span id="contrastValue" class="value-display">100%</span>
+          </label>
+
+          <label class="control-label">
+            <span>Hue Shift</span>
+            <input id="hueShift" type="range" min="0" max="360" value="0" class="control-range" />
+            <span id="hueShiftValue" class="value-display">0°</span>
+          </label>
+        </div>
+
+        <div class="control-row">
+          <button id="resetAdjustmentsBtn" class="btn-outline" style="margin-top:8px;">↺ Reset Adjustments</button>
+        </div>
+
+        <!-- Custom Color Palette Editor -->
+        <div id="customPaletteSection" class="custom-palette-section" style="display:none;">
+          <h4 class="palette-title">Custom Color Palette</h4>
+          <div id="colorPalette" class="color-palette">
+            <div class="color-item">
+              <input type="color" id="color1" value="#FF006E" class="color-picker" />
+              <label for="color1">Color 1</label>
+            </div>
+            <div class="color-item">
+              <input type="color" id="color2" value="#FFBE0B" class="color-picker" />
+              <label for="color2">Color 2</label>
+            </div>
+            <div class="color-item">
+              <input type="color" id="color3" value="#3A86FF" class="color-picker" />
+              <label for="color3">Color 3</label>
+            </div>
+            <div class="color-item">
+              <input type="color" id="color4" value="#8338EC" class="color-picker" />
+              <label for="color4">Color 4</label>
+            </div>
+            <div class="color-item">
+              <input type="color" id="color5" value="#00F5D4" class="color-picker" />
+              <label for="color5">Color 5</label>
+            </div>
+          </div>
+          <div class="palette-actions">
+            <button id="randomColorsBtn" class="btn-outline">🎲 Random Colors</button>
+            <button id="resetColorsBtn" class="btn-outline">↺ Reset</button>
+            <button id="addColorBtn" class="btn-outline">+ Add Color</button>
+          </div>
+        </div>
+
+        <!-- Color Preview -->
+        <div class="color-preview-section">
+          <h4 class="palette-title">Color Preview</h4>
+          <div id="colorPreview" class="color-preview"></div>
         </div>
 
         <div class="action-buttons">

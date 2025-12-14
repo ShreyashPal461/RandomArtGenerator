@@ -38,6 +38,22 @@
   const previewBtn = document.getElementById('previewBtn');
   const randomizeBtn = document.getElementById('randomizeBtn');
   const darkModeToggle = document.getElementById('darkModeToggle');
+  
+  // Color controls
+  const brightnessInput = document.getElementById('brightness');
+  const brightnessValue = document.getElementById('brightnessValue');
+  const saturationInput = document.getElementById('saturation');
+  const saturationValue = document.getElementById('saturationValue');
+  const contrastInput = document.getElementById('contrast');
+  const contrastValue = document.getElementById('contrastValue');
+  const hueShiftInput = document.getElementById('hueShift');
+  const hueShiftValue = document.getElementById('hueShiftValue');
+  const customPaletteSection = document.getElementById('customPaletteSection');
+  const colorPreview = document.getElementById('colorPreview');
+  const randomColorsBtn = document.getElementById('randomColorsBtn');
+  const resetColorsBtn = document.getElementById('resetColorsBtn');
+  const addColorBtn = document.getElementById('addColorBtn');
+  const resetAdjustmentsBtn = document.getElementById('resetAdjustmentsBtn');
 
   // Resolution presets
   const resolutions = {
@@ -56,7 +72,25 @@
     light: ['#FFFFFF', '#F5F5F5', '#E0E0E0', '#BDBDBD', '#9E9E9E'],
     neon: ['#FF006E', '#FFBE0B', '#3A86FF', '#8338EC', '#00F5D4'],
     warm: ['#FF5E5B', '#FFA41B', '#FFD166', '#FF9F9F', '#FF6B6B'],
-    cool: ['#006994', '#00A8CC', '#4ECDC4', '#95E1D3', '#6BCAE2']
+    cool: ['#006994', '#00A8CC', '#4ECDC4', '#95E1D3', '#6BCAE2'],
+    sunset: ['#FF6B6B', '#FFA07A', '#FFD93D', '#FF8C42', '#FF6347'],
+    ocean: ['#006994', '#00A8CC', '#4ECDC4', '#95E1D3', '#6BCAE2', '#1E90FF'],
+    forest: ['#2D5016', '#3E7B27', '#4A9F3D', '#6BC259', '#8FD475', '#A8E68F'],
+    autumn: ['#D2691E', '#CD853F', '#F4A460', '#FF8C00', '#FF7F50', '#FF6347'],
+    spring: ['#FFB6C1', '#FFC0CB', '#FFDAB9', '#98FB98', '#87CEEB', '#DDA0DD'],
+    monochrome: ['#000000', '#333333', '#666666', '#999999', '#CCCCCC', '#FFFFFF'],
+    rainbow: ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF', '#4B0082', '#9400D3']
+  };
+
+  // Custom color palette (user-defined)
+  let customPalette = ['#FF006E', '#FFBE0B', '#3A86FF', '#8338EC', '#00F5D4'];
+  
+  // Color adjustment values
+  let colorAdjustments = {
+    brightness: 100,
+    saturation: 100,
+    contrast: 100,
+    hueShift: 0
   };
 
   // Wallpaper Database - 30+ wallpapers organized by category
@@ -154,9 +188,114 @@
     fullscreenCanvas.height = height;
   }
 
+  // Color manipulation functions
+  function hexToRgb(hex) {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+      r: parseInt(result[1], 16),
+      g: parseInt(result[2], 16),
+      b: parseInt(result[3], 16)
+    } : null;
+  }
+
+  function rgbToHex(r, g, b) {
+    return "#" + ((1 << 24) + (Math.round(r) << 16) + (Math.round(g) << 8) + Math.round(b)).toString(16).slice(1);
+  }
+
+  function rgbToHsl(r, g, b) {
+    r /= 255;
+    g /= 255;
+    b /= 255;
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    let h, s, l = (max + min) / 2;
+
+    if (max === min) {
+      h = s = 0;
+    } else {
+      const d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      switch (max) {
+        case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+        case g: h = ((b - r) / d + 2) / 6; break;
+        case b: h = ((r - g) / d + 4) / 6; break;
+      }
+    }
+    return { h: h * 360, s: s * 100, l: l * 100 };
+  }
+
+  function hslToRgb(h, s, l) {
+    h /= 360;
+    s /= 100;
+    l /= 100;
+    let r, g, b;
+    if (s === 0) {
+      r = g = b = l;
+    } else {
+      const hue2rgb = (p, q, t) => {
+        if (t < 0) t += 1;
+        if (t > 1) t -= 1;
+        if (t < 1/6) return p + (q - p) * 6 * t;
+        if (t < 1/2) return q;
+        if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+        return p;
+      };
+      const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+      const p = 2 * l - q;
+      r = hue2rgb(p, q, h + 1/3);
+      g = hue2rgb(p, q, h);
+      b = hue2rgb(p, q, h - 1/3);
+    }
+    return { r: r * 255, g: g * 255, b: b * 255 };
+  }
+
+  function adjustColor(color, adjustments) {
+    const rgb = hexToRgb(color);
+    if (!rgb) return color;
+
+    // Apply hue shift
+    if (adjustments.hueShift !== 0) {
+      const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+      hsl.h = (hsl.h + adjustments.hueShift) % 360;
+      const newRgb = hslToRgb(hsl.h, hsl.s, hsl.l);
+      rgb.r = newRgb.r;
+      rgb.g = newRgb.g;
+      rgb.b = newRgb.b;
+    }
+
+    // Apply saturation
+    if (adjustments.saturation !== 100) {
+      const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+      hsl.s = Math.max(0, Math.min(100, hsl.s * (adjustments.saturation / 100)));
+      const newRgb = hslToRgb(hsl.h, hsl.s, hsl.l);
+      rgb.r = newRgb.r;
+      rgb.g = newRgb.g;
+      rgb.b = newRgb.b;
+    }
+
+    // Apply brightness
+    if (adjustments.brightness !== 100) {
+      rgb.r = Math.max(0, Math.min(255, rgb.r * (adjustments.brightness / 100)));
+      rgb.g = Math.max(0, Math.min(255, rgb.g * (adjustments.brightness / 100)));
+      rgb.b = Math.max(0, Math.min(255, rgb.b * (adjustments.brightness / 100)));
+    }
+
+    // Apply contrast
+    if (adjustments.contrast !== 100) {
+      const factor = (259 * (adjustments.contrast + 255)) / (255 * (259 - adjustments.contrast));
+      rgb.r = Math.max(0, Math.min(255, factor * (rgb.r - 128) + 128));
+      rgb.g = Math.max(0, Math.min(255, factor * (rgb.g - 128) + 128));
+      rgb.b = Math.max(0, Math.min(255, factor * (rgb.b - 128) + 128));
+    }
+
+    return rgbToHex(rgb.r, rgb.g, rgb.b);
+  }
+
   // Get palette
   function getPalette(wallpaperId) {
+    let palette;
     const theme = colorThemeSelect.value;
+    
     if (theme === 'auto') {
       // Category-based palettes
       const categoryPalettes = {
@@ -168,9 +307,22 @@
         anime: ['#FFB4C6', '#FFD6A5', '#BFEAF5', '#C7F9CC', '#DAD2FF', '#FF9F9F']
       };
       const wallpaper = wallpapers.find(w => w.id === wallpaperId);
-      return categoryPalettes[wallpaper?.category] || colorThemes.vibrant;
+      palette = categoryPalettes[wallpaper?.category] || colorThemes.vibrant;
+    } else if (theme === 'custom') {
+      palette = [...customPalette];
+    } else {
+      palette = colorThemes[theme] || colorThemes.vibrant;
     }
-    return colorThemes[theme] || colorThemes.vibrant;
+
+    // Apply color adjustments
+    if (colorAdjustments.brightness !== 100 || 
+        colorAdjustments.saturation !== 100 || 
+        colorAdjustments.contrast !== 100 || 
+        colorAdjustments.hueShift !== 0) {
+      return palette.map(color => adjustColor(color, colorAdjustments));
+    }
+
+    return palette;
   }
 
   // Wallpaper renderers (keeping key ones, adding new ones)
@@ -1141,6 +1293,7 @@
     currentWallpaperName.textContent = currentWallpaper.name;
     controlsPanel.style.display = 'block';
     canvasPlaceholder.style.display = 'none';
+    updateColorPreview();
     
     // Check if wallpaper has a real image URL
     if (currentWallpaper.imageUrl) {
@@ -1362,11 +1515,193 @@
     }
   });
 
+  // Update color preview
+  function updateColorPreview() {
+    if (!currentWallpaper) return;
+    const palette = getPalette(currentWallpaper.id);
+    colorPreview.innerHTML = '';
+    palette.forEach((color, index) => {
+      const colorBox = document.createElement('div');
+      colorBox.className = 'color-box';
+      colorBox.style.backgroundColor = color;
+      colorBox.title = color;
+      colorPreview.appendChild(colorBox);
+    });
+  }
+
+  // Color adjustment event listeners
+  brightnessInput.addEventListener('input', (e) => {
+    colorAdjustments.brightness = parseInt(e.target.value);
+    brightnessValue.textContent = colorAdjustments.brightness + '%';
+    if (currentWallpaper && !currentWallpaper.imageUrl) {
+      particleSystem = null;
+      if (!isAnimating) renderWallpaper(currentWallpaper.id);
+      updateColorPreview();
+    }
+  });
+
+  saturationInput.addEventListener('input', (e) => {
+    colorAdjustments.saturation = parseInt(e.target.value);
+    saturationValue.textContent = colorAdjustments.saturation + '%';
+    if (currentWallpaper && !currentWallpaper.imageUrl) {
+      particleSystem = null;
+      if (!isAnimating) renderWallpaper(currentWallpaper.id);
+      updateColorPreview();
+    }
+  });
+
+  contrastInput.addEventListener('input', (e) => {
+    colorAdjustments.contrast = parseInt(e.target.value);
+    contrastValue.textContent = colorAdjustments.contrast + '%';
+    if (currentWallpaper && !currentWallpaper.imageUrl) {
+      particleSystem = null;
+      if (!isAnimating) renderWallpaper(currentWallpaper.id);
+      updateColorPreview();
+    }
+  });
+
+  hueShiftInput.addEventListener('input', (e) => {
+    colorAdjustments.hueShift = parseInt(e.target.value);
+    hueShiftValue.textContent = colorAdjustments.hueShift + '°';
+    if (currentWallpaper && !currentWallpaper.imageUrl) {
+      particleSystem = null;
+      if (!isAnimating) renderWallpaper(currentWallpaper.id);
+      updateColorPreview();
+    }
+  });
+
+  // Custom palette color pickers
+  function setupColorPickers() {
+    const colorPickers = document.querySelectorAll('.color-picker');
+    colorPickers.forEach((picker, index) => {
+      picker.addEventListener('input', (e) => {
+        customPalette[index] = e.target.value.toUpperCase();
+        if (colorThemeSelect.value === 'custom' && currentWallpaper && !currentWallpaper.imageUrl) {
+          particleSystem = null;
+          if (!isAnimating) renderWallpaper(currentWallpaper.id);
+          updateColorPreview();
+        }
+      });
+    });
+  }
+
+  // Random color generator
+  function generateRandomColor() {
+    return '#' + Math.floor(Math.random()*16777215).toString(16).toUpperCase().padStart(6, '0');
+  }
+
+  // Random colors button
+  randomColorsBtn.addEventListener('click', () => {
+    const colorPickers = document.querySelectorAll('.color-picker');
+    colorPickers.forEach((picker, index) => {
+      const randomColor = generateRandomColor();
+      picker.value = randomColor;
+      customPalette[index] = randomColor;
+    });
+    if (colorThemeSelect.value === 'custom' && currentWallpaper && !currentWallpaper.imageUrl) {
+      particleSystem = null;
+      if (!isAnimating) renderWallpaper(currentWallpaper.id);
+      updateColorPreview();
+    }
+  });
+
+  // Reset colors button
+  resetColorsBtn.addEventListener('click', () => {
+    customPalette = ['#FF006E', '#FFBE0B', '#3A86FF', '#8338EC', '#00F5D4'];
+    const colorPickers = document.querySelectorAll('.color-picker');
+    colorPickers.forEach((picker, index) => {
+      if (customPalette[index]) {
+        picker.value = customPalette[index];
+      }
+    });
+    if (colorThemeSelect.value === 'custom' && currentWallpaper && !currentWallpaper.imageUrl) {
+      particleSystem = null;
+      if (!isAnimating) renderWallpaper(currentWallpaper.id);
+      updateColorPreview();
+    }
+  });
+
+  // Reset adjustments button
+  resetAdjustmentsBtn.addEventListener('click', () => {
+    colorAdjustments = {
+      brightness: 100,
+      saturation: 100,
+      contrast: 100,
+      hueShift: 0
+    };
+    brightnessInput.value = 100;
+    brightnessValue.textContent = '100%';
+    saturationInput.value = 100;
+    saturationValue.textContent = '100%';
+    contrastInput.value = 100;
+    contrastValue.textContent = '100%';
+    hueShiftInput.value = 0;
+    hueShiftValue.textContent = '0°';
+    if (currentWallpaper && !currentWallpaper.imageUrl) {
+      particleSystem = null;
+      if (!isAnimating) renderWallpaper(currentWallpaper.id);
+      updateColorPreview();
+    }
+  });
+
+  // Add color button
+  addColorBtn.addEventListener('click', () => {
+    const colorPalette = document.getElementById('colorPalette');
+    const newIndex = customPalette.length;
+    const newColor = generateRandomColor();
+    customPalette.push(newColor);
+    
+    const colorItem = document.createElement('div');
+    colorItem.className = 'color-item';
+    colorItem.innerHTML = `
+      <input type="color" id="color${newIndex + 1}" value="${newColor}" class="color-picker" />
+      <label for="color${newIndex + 1}">Color ${newIndex + 1}</label>
+      <button class="remove-color-btn" data-index="${newIndex}">×</button>
+    `;
+    colorPalette.appendChild(colorItem);
+    
+    const newPicker = colorItem.querySelector('.color-picker');
+    newPicker.addEventListener('input', (e) => {
+      customPalette[newIndex] = e.target.value.toUpperCase();
+      if (colorThemeSelect.value === 'custom' && currentWallpaper && !currentWallpaper.imageUrl) {
+        particleSystem = null;
+        if (!isAnimating) renderWallpaper(currentWallpaper.id);
+        updateColorPreview();
+      }
+    });
+    
+    const removeBtn = colorItem.querySelector('.remove-color-btn');
+    removeBtn.addEventListener('click', () => {
+      customPalette.splice(newIndex, 1);
+      colorItem.remove();
+      if (colorThemeSelect.value === 'custom' && currentWallpaper && !currentWallpaper.imageUrl) {
+        particleSystem = null;
+        if (!isAnimating) renderWallpaper(currentWallpaper.id);
+        updateColorPreview();
+      }
+    });
+  });
+
+  // Color theme change handler
+  colorThemeSelect.addEventListener('change', () => {
+    if (colorThemeSelect.value === 'custom') {
+      customPaletteSection.style.display = 'block';
+    } else {
+      customPaletteSection.style.display = 'none';
+    }
+    if (currentWallpaper && !currentWallpaper.imageUrl) {
+      particleSystem = null;
+      if (!isAnimating) renderWallpaper(currentWallpaper.id);
+      updateColorPreview();
+    }
+  });
+
   [colorThemeSelect, intensityInput].forEach(el => {
     el.addEventListener('change', () => {
       if (currentWallpaper && !currentWallpaper.imageUrl) {
         particleSystem = null;
         if (!isAnimating) renderWallpaper(currentWallpaper.id);
+        updateColorPreview();
       }
     });
   });
@@ -1409,4 +1744,6 @@
   setCanvasResolution(3840, 2160);
   buildWallpaperGrid('all');
   initDarkMode();
+  setupColorPickers();
+  updateColorPreview();
 })();
