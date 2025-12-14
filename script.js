@@ -55,6 +55,19 @@
   const addColorBtn = document.getElementById('addColorBtn');
   const resetAdjustmentsBtn = document.getElementById('resetAdjustmentsBtn');
   const favoriteBtn = document.getElementById('favoriteBtn');
+  const undoBtn = document.getElementById('undoBtn');
+  const redoBtn = document.getElementById('redoBtn');
+  const historyBtn = document.getElementById('historyBtn');
+  const historyModal = document.getElementById('historyModal');
+  const closeHistoryBtn = document.getElementById('closeHistoryBtn');
+  const historyList = document.getElementById('historyList');
+  const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+  const historyCount = document.getElementById('historyCount');
+  const exportFormatSelect = document.getElementById('exportFormat');
+  const qualityInput = document.getElementById('quality');
+  const qualityValue = document.getElementById('qualityValue');
+  const qualityLabel = document.getElementById('qualityLabel');
+  const fileSizeEstimate = document.getElementById('fileSizeEstimate');
 
   // Resolution presets
   const resolutions = {
@@ -162,6 +175,268 @@
   let currentHeight = 2160;
   let activeCategory = 'all';
   let favorites = [];
+  
+  // History and Undo/Redo
+  let history = [];
+  let historyIndex = -1;
+  const MAX_HISTORY_SIZE = 50;
+
+  // History Management
+  function saveHistoryState() {
+    if (!currentWallpaper) return;
+    
+    const state = {
+      wallpaperId: currentWallpaper.id,
+      wallpaperName: currentWallpaper.name,
+      resolution: {
+        width: currentWidth,
+        height: currentHeight
+      },
+      colorTheme: colorThemeSelect.value,
+      intensity: intensityInput.value,
+      brightness: brightnessInput.value,
+      saturation: saturationInput.value,
+      contrast: contrastInput.value,
+      hueShift: hueShiftInput.value,
+      isLive: isLiveSelect.value,
+      animSpeed: animSpeedInput.value,
+      exportFormat: exportFormatSelect.value,
+      quality: qualityInput.value,
+      customPalette: [...customPalette],
+      timestamp: Date.now()
+    };
+    
+    // Remove any states after current index (when undoing and making new changes)
+    if (historyIndex < history.length - 1) {
+      history = history.slice(0, historyIndex + 1);
+    }
+    
+    // Add new state
+    history.push(state);
+    
+    // Limit history size
+    if (history.length > MAX_HISTORY_SIZE) {
+      history.shift();
+    } else {
+      historyIndex = history.length - 1;
+    }
+    
+    // Save to localStorage
+    saveHistoryToStorage();
+    
+    // Update UI
+    updateUndoRedoButtons();
+    updateHistoryCount();
+  }
+
+  function loadHistoryFromStorage() {
+    try {
+      const saved = localStorage.getItem('wallpaperHistory');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        history = parsed.history || [];
+        historyIndex = parsed.historyIndex !== undefined ? parsed.historyIndex : history.length - 1;
+        // Ensure index is valid
+        if (historyIndex < 0) historyIndex = -1;
+        if (historyIndex >= history.length) historyIndex = history.length - 1;
+      }
+    } catch (e) {
+      console.error('Error loading history:', e);
+      history = [];
+      historyIndex = -1;
+    }
+  }
+
+  function saveHistoryToStorage() {
+    try {
+      localStorage.setItem('wallpaperHistory', JSON.stringify({
+        history: history,
+        historyIndex: historyIndex
+      }));
+    } catch (e) {
+      console.error('Error saving history:', e);
+    }
+  }
+
+  function restoreState(state) {
+    if (!state) return;
+    
+    // Find wallpaper
+    const wallpaper = wallpapers.find(w => w.id === state.wallpaperId);
+    if (!wallpaper) return;
+    
+    // Restore wallpaper
+    currentWallpaper = wallpaper;
+    currentWallpaperName.textContent = wallpaper.name;
+    
+    // Restore resolution
+    currentWidth = state.resolution.width;
+    currentHeight = state.resolution.height;
+    setCanvasResolution(state.resolution.width, state.resolution.height);
+    
+    // Restore settings
+    if (state.colorTheme) colorThemeSelect.value = state.colorTheme;
+    if (state.intensity !== undefined) {
+      intensityInput.value = state.intensity;
+      intensityValue.textContent = state.intensity;
+    }
+    if (state.brightness !== undefined) {
+      brightnessInput.value = state.brightness;
+      brightnessValue.textContent = state.brightness + '%';
+      colorAdjustments.brightness = parseInt(state.brightness);
+    }
+    if (state.saturation !== undefined) {
+      saturationInput.value = state.saturation;
+      saturationValue.textContent = state.saturation + '%';
+      colorAdjustments.saturation = parseInt(state.saturation);
+    }
+    if (state.contrast !== undefined) {
+      contrastInput.value = state.contrast;
+      contrastValue.textContent = state.contrast + '%';
+      colorAdjustments.contrast = parseInt(state.contrast);
+    }
+    if (state.hueShift !== undefined) {
+      hueShiftInput.value = state.hueShift;
+      hueShiftValue.textContent = state.hueShift + '°';
+      colorAdjustments.hueShift = parseInt(state.hueShift);
+    }
+    if (state.isLive) isLiveSelect.value = state.isLive;
+    if (state.animSpeed !== undefined) {
+      animSpeedInput.value = state.animSpeed;
+      speedValue.textContent = state.animSpeed;
+    }
+    if (state.exportFormat) exportFormatSelect.value = state.exportFormat;
+    if (state.quality !== undefined) {
+      qualityInput.value = state.quality;
+      qualityValue.textContent = Math.round(state.quality * 100) + '%';
+    }
+    if (state.customPalette) {
+      customPalette = [...state.customPalette];
+      // Update color pickers
+      const colorPickers = document.querySelectorAll('.color-picker');
+      colorPickers.forEach((picker, index) => {
+        if (customPalette[index]) {
+          picker.value = customPalette[index];
+        }
+      });
+    }
+    
+    // Update UI
+    if (exportFormatSelect.value === 'png') {
+      qualityLabel.style.display = 'none';
+    } else {
+      qualityLabel.style.display = 'flex';
+    }
+    
+    // Render wallpaper
+    if (wallpaper.imageUrl) {
+      canvas.style.display = 'none';
+      wallpaperImage.style.display = 'block';
+      wallpaperImage.src = wallpaper.imageUrl + '&sig=' + Date.now();
+    } else {
+      wallpaperImage.style.display = 'none';
+      canvas.style.display = 'block';
+      renderWallpaper(wallpaper.id);
+      if (isLiveSelect.value === 'live') {
+        isAnimating = true;
+        animate();
+      }
+    }
+    
+    updateColorPreview();
+    updateFavoriteUI();
+    updateFileSizeEstimate();
+  }
+
+  function undo() {
+    if (historyIndex > 0) {
+      historyIndex--;
+      const state = history[historyIndex];
+      restoreState(state);
+      updateUndoRedoButtons();
+    }
+  }
+
+  function redo() {
+    if (historyIndex < history.length - 1) {
+      historyIndex++;
+      const state = history[historyIndex];
+      restoreState(state);
+      updateUndoRedoButtons();
+    }
+  }
+
+  function updateUndoRedoButtons() {
+    if (undoBtn) {
+      undoBtn.disabled = historyIndex <= 0;
+    }
+    if (redoBtn) {
+      redoBtn.disabled = historyIndex >= history.length - 1;
+    }
+  }
+
+  function updateHistoryCount() {
+    if (historyCount) {
+      historyCount.textContent = `${history.length} item${history.length !== 1 ? 's' : ''}`;
+    }
+  }
+
+  function buildHistoryList() {
+    if (!historyList) return;
+    
+    historyList.innerHTML = '';
+    
+    if (history.length === 0) {
+      historyList.innerHTML = '<div class="empty-history">No history yet. Start customizing wallpapers to see your history here.</div>';
+      return;
+    }
+    
+    // Show history in reverse order (newest first)
+    const reversedHistory = [...history].reverse();
+    
+    reversedHistory.forEach((state, index) => {
+      const actualIndex = history.length - 1 - index;
+      const isCurrent = actualIndex === historyIndex;
+      const wallpaper = wallpapers.find(w => w.id === state.wallpaperId);
+      
+      const item = document.createElement('div');
+      item.className = `history-item ${isCurrent ? 'current' : ''}`;
+      item.innerHTML = `
+        <div class="history-item-icon">${wallpaper ? wallpaper.icon : '🖼️'}</div>
+        <div class="history-item-info">
+          <div class="history-item-name">${state.wallpaperName || 'Unknown'}</div>
+          <div class="history-item-details">
+            ${state.resolution.width}×${state.resolution.height} • ${state.colorTheme} • ${new Date(state.timestamp).toLocaleString()}
+          </div>
+        </div>
+        <div class="history-item-actions">
+          ${isCurrent ? '<span class="current-badge">Current</span>' : ''}
+          <button class="restore-btn" data-index="${actualIndex}" title="Restore this state">↻ Restore</button>
+        </div>
+      `;
+      
+      const restoreBtn = item.querySelector('.restore-btn');
+      restoreBtn.addEventListener('click', () => {
+        historyIndex = actualIndex;
+        restoreState(state);
+        updateUndoRedoButtons();
+        buildHistoryList();
+      });
+      
+      historyList.appendChild(item);
+    });
+  }
+
+  function clearHistory() {
+    if (confirm('Are you sure you want to clear all history? This cannot be undone.')) {
+      history = [];
+      historyIndex = -1;
+      saveHistoryToStorage();
+      updateUndoRedoButtons();
+      updateHistoryCount();
+      buildHistoryList();
+    }
+  }
 
   // Favorites management
   function loadFavorites() {
@@ -1411,6 +1686,11 @@
 
   // Select wallpaper
   function selectWallpaper(wallpaperId) {
+    // Save current state to history before changing
+    if (currentWallpaper) {
+      saveHistoryState();
+    }
+    
     currentWallpaper = wallpapers.find(w => w.id === wallpaperId);
     currentWallpaperName.textContent = currentWallpaper.name;
     controlsPanel.style.display = 'block';
@@ -1426,6 +1706,11 @@
     } else {
       updateFileSizeEstimate();
     }
+    
+    // Save new state
+    setTimeout(() => {
+      saveHistoryState();
+    }, 100);
     
     // Check if wallpaper has a real image URL
     if (currentWallpaper.imageUrl) {
@@ -1479,6 +1764,51 @@
       cancelAnimationFrame(animationFrame);
     }
   }
+
+  // Undo/Redo button event listeners
+  undoBtn.addEventListener('click', () => {
+    undo();
+  });
+
+  redoBtn.addEventListener('click', () => {
+    redo();
+  });
+
+  // Keyboard shortcuts for undo/redo
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+      e.preventDefault();
+      if (historyIndex > 0) {
+        undo();
+      }
+    } else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+      e.preventDefault();
+      if (historyIndex < history.length - 1) {
+        redo();
+      }
+    }
+  });
+
+  // History panel event listeners
+  historyBtn.addEventListener('click', () => {
+    buildHistoryList();
+    historyModal.style.display = 'flex';
+  });
+
+  closeHistoryBtn.addEventListener('click', () => {
+    historyModal.style.display = 'none';
+  });
+
+  clearHistoryBtn.addEventListener('click', () => {
+    clearHistory();
+  });
+
+  // Close history modal on outside click
+  historyModal.addEventListener('click', (e) => {
+    if (e.target === historyModal) {
+      historyModal.style.display = 'none';
+    }
+  });
 
   // Favorite button event listener
   favoriteBtn.addEventListener('click', () => {
@@ -2186,14 +2516,43 @@
     }
   });
 
+  // Track changes for history
+  const historyTrackedInputs = [
+    colorThemeSelect, intensityInput, brightnessInput, saturationInput,
+    contrastInput, hueShiftInput, isLiveSelect, animSpeedInput,
+    exportFormatSelect, qualityInput, resolutionSelect
+  ];
+
+  historyTrackedInputs.forEach(el => {
+    if (el) {
+      el.addEventListener('change', () => {
+        if (currentWallpaper) {
+          // Save to history after a short delay to avoid too many entries
+          clearTimeout(el._historyTimeout);
+          el._historyTimeout = setTimeout(() => {
+            saveHistoryState();
+          }, 500);
+          
+          if (!currentWallpaper.imageUrl) {
+            particleSystem = null;
+            if (!isAnimating) renderWallpaper(currentWallpaper.id);
+            updateColorPreview();
+          }
+        }
+      });
+    }
+  });
+
   [colorThemeSelect, intensityInput].forEach(el => {
-    el.addEventListener('change', () => {
-      if (currentWallpaper && !currentWallpaper.imageUrl) {
-        particleSystem = null;
-        if (!isAnimating) renderWallpaper(currentWallpaper.id);
-        updateColorPreview();
-      }
-    });
+    if (el) {
+      el.addEventListener('change', () => {
+        if (currentWallpaper && !currentWallpaper.imageUrl) {
+          particleSystem = null;
+          if (!isAnimating) renderWallpaper(currentWallpaper.id);
+          updateColorPreview();
+        }
+      });
+    }
   });
 
   // Dark Mode Toggle Function
@@ -2232,6 +2591,7 @@
 
   // Initialize
   loadFavorites();
+  loadHistoryFromStorage();
   setCanvasResolution(3840, 2160);
   buildWallpaperGrid('all');
   initDarkMode();
@@ -2239,6 +2599,8 @@
   updateColorPreview();
   updateFavoriteIndicators();
   updateFavoritesBadge();
+  updateUndoRedoButtons();
+  updateHistoryCount();
   
   // Initialize export format UI
   if (exportFormatSelect) {
