@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>4K Wallpaper Generator - Live & Static Wallpapers</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="page">
+    <header class="header">
+      <h1>🎨 4K Wallpaper Generator</h1>
+      <p class="subtitle">Transform your screen with AI-powered art. Generate unique 4K wallpapers from monuments, nature, space, and abstract designs. Download high-resolution masterpieces instantly!</p>
+    </header>
+
+    <!-- Category Tabs -->
+    <section class="category-tabs">
+      <button class="tab-btn active" data-category="all">All</button>
+      <button class="tab-btn" data-category="monuments">Monuments</button>
+      <button class="tab-btn" data-category="nature">Nature</button>
+      <button class="tab-btn" data-category="space">Space</button>
+      <button class="tab-btn" data-category="abstract">Abstract</button>
+      <button class="tab-btn" data-category="city">City</button>
+      <button class="tab-btn" data-category="minimal">Minimal</button>
+      <button class="tab-btn" data-category="anime">Anime Style</button>
+    </section>
+
+    <!-- Wallpaper Grid -->
+    <section class="wallpaper-grid-section">
+      <h2 class="section-title">Choose Your Wallpaper</h2>
+      <div id="wallpaperGrid" class="wallpaper-grid">
+        <!-- Wallpapers will be generated dynamically -->
+      </div>
+    </section>
+
+    <!-- Controls Panel -->
+    <section class="controls-panel" id="controlsPanel" style="display:none;">
+      <div class="panel-header">
+        <h3>Customize Your Wallpaper</h3>
+        <button class="close-panel-btn" id="closePanelBtn">✕</button>
+      </div>
+      
+      <div class="controls-content">
+        <div class="control-row">
+          <label class="control-label">
+            <span>Resolution</span>
+            <select id="resolution" class="control-select">
+              <option value="1080p">1080p (1920×1080)</option>
+              <option value="1440p">1440p (2560×1440)</option>
+              <option value="4k" selected>4K (3840×2160)</option>
+              <option value="8k">8K (7680×4320)</option>
+              <option value="custom">Custom</option>
+            </select>
+          </label>
+
+          <label class="control-label" id="customWidthLabel" style="display:none;">
+            <span>Width</span>
+            <input id="customWidth" type="number" min="1920" max="7680" value="3840" class="control-input" />
+          </label>
+
+          <label class="control-label" id="customHeightLabel" style="display:none;">
+            <span>Height</span>
+            <input id="customHeight" type="number" min="1080" max="4320" value="2160" class="control-input" />
+          </label>
+        </div>
+
+        <div class="control-row">
+          <label class="control-label">
+            <span>Animation</span>
+            <select id="isLive" class="control-select">
+              <option value="static">Static Image</option>
+              <option value="live" selected>Live Wallpaper</option>
+            </select>
+          </label>
+
+          <label class="control-label" id="animSpeedLabel">
+            <span>Speed</span>
+            <input id="animSpeed" type="range" min="1" max="10" value="5" class="control-range" />
+            <span id="speedValue" class="value-display">5</span>
+          </label>
+
+          <label class="control-label">
+            <span>Intensity</span>
+            <input id="intensity" type="range" min="1" max="10" value="5" class="control-range" />
+            <span id="intensityValue" class="value-display">5</span>
+          </label>
+        </div>
+
+        <div class="control-row">
+          <label class="control-label">
+            <span>Color Theme</span>
+            <select id="colorTheme" class="control-select">
+              <option value="auto">Auto (Recommended)</option>
+              <option value="vibrant">Vibrant</option>
+              <option value="pastel">Pastel</option>
+              <option value="dark">Dark</option>
+              <option value="light">Light</option>
+              <option value="neon">Neon</option>
+              <option value="warm">Warm</option>
+              <option value="cool">Cool</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="action-buttons">
+          <button id="generateBtn" class="btn-primary">Generate</button>
+          <button id="downloadBtn" class="btn-secondary">Download 4K</button>
+          <button id="previewBtn" class="btn-secondary">Preview</button>
+          <button id="randomizeBtn" class="btn-outline">Randomize</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Canvas Display -->
+    <section class="canvas-section">
+      <div class="canvas-wrapper">
+        <div class="canvas-header">
+          <h3 id="currentWallpaperName">Select a wallpaper to begin</h3>
+          <div class="canvas-actions">
+            <button id="playPauseBtn" class="btn-icon" style="display:none;">⏸</button>
+            <button id="fullscreenBtn" class="btn-icon" style="display:none;">⛶</button>
+          </div>
+        </div>
+        <div class="canvas-container">
+          <canvas id="wallpaperCanvas" width="3840" height="2160"></canvas>
+          <img id="wallpaperImage" style="display:none;max-width:100%;height:auto;border-radius:12px;" alt="Wallpaper" />
+          <div class="canvas-placeholder">
+            <div class="placeholder-icon">🖼️</div>
+            <p>Choose a wallpaper from above to see it here</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <p>✨ AI Art Generator | 🎨 Digital Masterpieces | 🌟 Custom Wallpapers | 📸 High-Resolution Images | 🚀 Unlimited Creative Possibilities</p>
+    </footer>
+  
+  </main>
+
+  <!-- Fullscreen Modal -->
+  <div id="fullscreenModal" class="fullscreen-modal" style="display:none;">
+    <button id="closeFullscreenBtn" class="close-fullscreen">✕</button>
+    <canvas id="fullscreenCanvas"></canvas>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

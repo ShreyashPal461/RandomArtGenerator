@@ -1,0 +1,146 @@
+:root{
+  --bg:#0a0e27;
+  --card:#0f1724;
+  --accent:#00f5d4;
+  --accent2:#7b2cbf;
+  --accent3:#ff006e;
+  --accent4:#ffbe0b;
+  --muted:#9aa4b2;
+  --glass: rgba(255,255,255,0.08);
+  --border: rgba(255,255,255,0.15);
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+}
+
+*{box-sizing: border-box}
+html,body{height:100%;margin:0;background: linear-gradient(135deg, #0a0e27 0%, #1a1a3e 25%, #0a0e27 50%, #1a0a27 75%, #0a0e27 100%); background-size: 400% 400%; animation: gradientShift 15s ease infinite; color:#e6eef8; position: relative; overflow-x: hidden;}
+html::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background:radial-gradient(circle at 20% 50%, rgba(0,245,212,0.1) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(123,44,191,0.1) 0%, transparent 50%), radial-gradient(circle at 40% 20%, rgba(255,0,110,0.05) 0%, transparent 50%);pointer-events:none;z-index:0}
+body>*{position:relative;z-index:1}
+@keyframes gradientShift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+
+.page{max-width:1600px;margin:0 auto;padding:24px}
+.header{text-align:center;margin-bottom:40px;padding:30px 20px;position:relative}
+.header::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:200px;height:200px;background:radial-gradient(circle, rgba(0,245,212,0.3) 0%, transparent 70%);filter:blur(60px);animation:pulse 3s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:0.5;transform:translateX(-50%) scale(1)}50%{opacity:0.8;transform:translateX(-50%) scale(1.2)}}
+.header h1{margin:0;font-size:52px;font-weight:800;background:linear-gradient(135deg, #00f5d4 0%, #7b2cbf 30%, #ff006e 60%, #ffbe0b 100%);background-size: 300% 300%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:gradientText 5s ease infinite;text-shadow:0 0 30px rgba(0,245,212,0.5);letter-spacing:-1px}
+@keyframes gradientText{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+.subtitle{margin:16px 0 0;color:var(--muted);font-size:18px;max-width:800px;margin-left:auto;margin-right:auto;opacity:0.9;text-shadow:0 2px 10px rgba(0,0,0,0.3)}
+
+/* Category Tabs */
+.category-tabs{display:flex;flex-wrap:wrap;gap:16px;justify-content:center;margin-bottom:40px;padding:24px;background:var(--glass);backdrop-filter:blur(20px);border-radius:20px;border:1px solid var(--border);box-shadow:0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);position:relative;overflow:hidden}
+.category-tabs::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:linear-gradient(45deg, transparent 30%, rgba(0,245,212,0.1) 50%, transparent 70%);animation:shine 3s infinite}
+@keyframes shine{0%{transform:translateX(-100%) translateY(-100%)}100%{transform:translateX(100%) translateY(100%)}}
+.tab-btn{padding:14px 28px;border-radius:12px;border:2px solid transparent;background:rgba(0,0,0,0.4);color:#dbeafe;cursor:pointer;font-size:15px;font-weight:600;transition:all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);position:relative;overflow:hidden;text-transform:uppercase;letter-spacing:0.5px}
+.tab-btn::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);transition:left 0.5s}
+.tab-btn:hover::before{left:100%}
+.tab-btn:hover{background:rgba(0,245,212,0.15);border-color:var(--accent);transform:translateY(-3px) scale(1.05);box-shadow:0 8px 25px rgba(0,245,212,0.4), 0 0 20px rgba(0,245,212,0.2)}
+.tab-btn.active{background:linear-gradient(135deg,var(--accent),var(--accent2),var(--accent3));background-size:200% 200%;animation:gradientMove 3s ease infinite;color:#000;border-color:transparent;box-shadow:0 6px 25px rgba(0,245,212,0.5), 0 0 30px rgba(123,44,191,0.4), inset 0 1px 0 rgba(255,255,255,0.3);transform:scale(1.05);font-weight:700}
+@keyframes gradientMove{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+
+/* Wallpaper Grid */
+.wallpaper-grid-section{margin-bottom:50px}
+.section-title{margin:0 0 32px 0;font-size:36px;background:linear-gradient(135deg, var(--accent), var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-align:center;font-weight:800;text-shadow:0 0 30px rgba(0,245,212,0.3);letter-spacing:-0.5px}
+.wallpaper-grid{display:grid;grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));gap:28px;padding:24px 0}
+.wallpaper-item{cursor:pointer;transition:all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);position:relative}
+.wallpaper-item:hover{transform:translateY(-8px) scale(1.02)}
+.wallpaper-thumbnail{position:relative;aspect-ratio:16/9;background:linear-gradient(135deg, var(--accent), var(--accent2), var(--accent3));background-size:200% 200%;animation:gradientMove 5s ease infinite;border-radius:20px;border:2px solid var(--border);overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,0.5), 0 0 20px rgba(0,245,212,0.2);transition:all 0.4s}
+.wallpaper-item:hover .wallpaper-thumbnail{box-shadow:0 20px 60px rgba(0,245,212,0.4), 0 0 40px rgba(123,44,191,0.3), inset 0 0 30px rgba(255,255,255,0.1);border-color:var(--accent)}
+.wallpaper-icon{position:absolute;top:50%;left:50%;transform:translate(-50%, -50%);font-size:72px;opacity:0.9;filter:drop-shadow(0 0 20px rgba(0,245,212,0.5));transition:all 0.4s;z-index:1}
+.wallpaper-item:hover .wallpaper-icon{transform:translate(-50%, -50%) scale(1.2) rotate(5deg);filter:drop-shadow(0 0 30px rgba(0,245,212,0.8))}
+.wallpaper-overlay{position:absolute;bottom:0;left:0;right:0;padding:24px;background:linear-gradient(to top, rgba(0,0,0,0.95), rgba(0,0,0,0.7), transparent);color:#fff;opacity:0;transition:all 0.4s;transform:translateY(20px)}
+.wallpaper-item:hover .wallpaper-overlay{opacity:1;transform:translateY(0)}
+.wallpaper-name{font-size:20px;font-weight:700;margin-bottom:8px;text-shadow:0 2px 10px rgba(0,0,0,0.8);letter-spacing:0.5px}
+.wallpaper-description{font-size:14px;color:rgba(255,255,255,0.9);line-height:1.5;text-shadow:0 1px 5px rgba(0,0,0,0.8)}
+
+/* Controls Panel */
+.controls-panel{background:var(--glass);backdrop-filter:blur(20px);border-radius:24px;border:1px solid var(--border);padding:32px;margin-bottom:40px;box-shadow:0 12px 50px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1);position:relative;overflow:hidden}
+.controls-panel::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg, var(--accent), var(--accent2), var(--accent3), var(--accent));background-size:300% 100%;animation:gradientMove 3s ease infinite}
+.panel-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;padding-bottom:20px;border-bottom:2px solid var(--border);position:relative}
+.panel-header::after{content:'';position:absolute;bottom:-2px;left:0;width:100px;height:2px;background:linear-gradient(90deg, var(--accent), transparent);animation:slideRight 2s ease infinite}
+@keyframes slideRight{0%{left:0}50%{left:calc(100% - 100px)}100%{left:0}}
+.panel-header h3{margin:0;font-size:28px;background:linear-gradient(135deg, var(--accent), var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:700;letter-spacing:-0.5px}
+.close-panel-btn{background:rgba(255,255,255,0.05);border:2px solid var(--border);color:#fff;width:42px;height:42px;border-radius:12px;cursor:pointer;font-size:22px;transition:all 0.3s;display:flex;align-items:center;justify-content:center}
+.close-panel-btn:hover{background:rgba(255,0,110,0.2);border-color:var(--accent3);transform:rotate(90deg) scale(1.1);box-shadow:0 0 20px rgba(255,0,110,0.4)}
+.controls-content{display:flex;flex-direction:column;gap:20px}
+.control-row{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-end}
+.control-label{display:flex;flex-direction:column;gap:8px;min-width:180px;flex:1}
+.control-label span{font-size:14px;color:var(--muted);font-weight:500}
+.control-select,.control-input{padding:12px 16px;border-radius:12px;border:2px solid var(--border);background:rgba(0,0,0,0.4);color:#fff;font-size:15px;transition:all 0.4s;backdrop-filter:blur(10px)}
+.control-select:hover,.control-input:hover{border-color:var(--accent);background:rgba(0,0,0,0.6);box-shadow:0 0 20px rgba(0,245,212,0.2);transform:translateY(-2px)}
+.control-select:focus,.control-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 4px rgba(0,245,212,0.2), 0 0 25px rgba(0,245,212,0.3);transform:translateY(-2px)}
+.control-range{width:100%;accent-color:var(--accent);height:8px;cursor:pointer;border-radius:4px}
+.control-range::-webkit-slider-thumb{appearance:none;width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg, var(--accent), var(--accent2));cursor:pointer;box-shadow:0 0 15px rgba(0,245,212,0.5);transition:all 0.3s}
+.control-range::-webkit-slider-thumb:hover{transform:scale(1.2);box-shadow:0 0 25px rgba(0,245,212,0.8)}
+.value-display{min-width:40px;text-align:center;color:var(--accent);font-weight:700;font-size:15px;padding:6px 12px;background:linear-gradient(135deg, rgba(0,245,212,0.2), rgba(123,44,191,0.2));border-radius:8px;border:1px solid rgba(0,245,212,0.3);box-shadow:0 0 15px rgba(0,245,212,0.2);text-shadow:0 0 10px rgba(0,245,212,0.5)}
+
+/* Action Buttons */
+.action-buttons{display:flex;flex-wrap:wrap;gap:16px;margin-top:12px}
+.btn-primary,.btn-secondary,.btn-outline{padding:14px 28px;border-radius:12px;border:none;cursor:pointer;font-size:16px;font-weight:600;transition:all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);position:relative;overflow:hidden;text-transform:uppercase;letter-spacing:1px;box-shadow:0 4px 15px rgba(0,0,0,0.2)}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2),var(--accent3));background-size:200% 200%;animation:gradientMove 3s ease infinite;color:#000;box-shadow:0 6px 25px rgba(0,245,212,0.4), 0 0 20px rgba(123,44,191,0.3)}
+.btn-primary::before{content:'';position:absolute;top:50%;left:50%;width:0;height:0;background:rgba(255,255,255,0.3);border-radius:50%;transform:translate(-50%, -50%);transition:width 0.6s, height 0.6s}
+.btn-primary:hover::before{width:300px;height:300px}
+.btn-primary:hover{transform:translateY(-4px) scale(1.05);box-shadow:0 10px 35px rgba(0,245,212,0.6), 0 0 40px rgba(123,44,191,0.4)}
+.btn-secondary{background:rgba(255,255,255,0.1);color:#fff;border:2px solid var(--border);backdrop-filter:blur(10px)}
+.btn-secondary:hover{background:rgba(255,255,255,0.2);border-color:var(--accent);transform:translateY(-3px);box-shadow:0 8px 25px rgba(0,245,212,0.3), 0 0 20px rgba(0,245,212,0.2)}
+.btn-outline{background:transparent;color:var(--accent);border:2px solid var(--accent);position:relative;overflow:hidden}
+.btn-outline::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg, transparent, rgba(0,245,212,0.2), transparent);transition:left 0.5s}
+.btn-outline:hover::before{left:100%}
+.btn-outline:hover{background:rgba(0,245,212,0.15);transform:translateY(-3px);box-shadow:0 8px 25px rgba(0,245,212,0.4), 0 0 30px rgba(0,245,212,0.3)}
+.btn-icon{background:rgba(255,255,255,0.1);border:2px solid var(--border);color:#fff;width:48px;height:48px;border-radius:12px;cursor:pointer;font-size:20px;transition:all 0.4s;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(10px)}
+.btn-icon:hover{background:rgba(0,245,212,0.2);border-color:var(--accent);transform:scale(1.1) rotate(5deg);box-shadow:0 8px 25px rgba(0,245,212,0.4), 0 0 20px rgba(0,245,212,0.3)}
+
+/* Canvas Section */
+.canvas-section{margin-bottom:50px}
+.canvas-wrapper{background:var(--glass);backdrop-filter:blur(20px);border-radius:24px;border:1px solid var(--border);padding:32px;box-shadow:0 12px 50px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1);position:relative;overflow:hidden}
+.canvas-wrapper::before{content:'';position:absolute;top:-2px;left:-2px;right:-2px;bottom:-2px;background:linear-gradient(45deg, var(--accent), var(--accent2), var(--accent3), var(--accent));background-size:400% 400%;animation:gradientMove 4s ease infinite;border-radius:24px;z-index:-1;opacity:0.3;filter:blur(10px)}
+.canvas-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;padding-bottom:20px;border-bottom:2px solid var(--border);position:relative}
+.canvas-header h3{margin:0;font-size:24px;color:#fff;font-weight:600;text-shadow:0 2px 10px rgba(0,0,0,0.5);letter-spacing:0.5px}
+.canvas-actions{display:flex;gap:12px}
+.canvas-container{position:relative;width:100%;display:flex;justify-content:center;background:linear-gradient(135deg, #000 0%, #0a0a1a 100%);border-radius:16px;overflow:hidden;min-height:450px;align-items:center;box-shadow:inset 0 0 50px rgba(0,0,0,0.5), 0 0 30px rgba(0,245,212,0.1)}
+.canvas-container::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:radial-gradient(circle at center, rgba(0,245,212,0.05) 0%, transparent 70%);pointer-events:none}
+canvas{max-width:70%;height:auto;display:none;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,0.8), 0 0 30px rgba(0,245,212,0.2)}
+#wallpaperImage{max-width:70%;height:auto;display:none;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,0.8), 0 0 30px rgba(0,245,212,0.2);transition:all 0.4s}
+#wallpaperImage:hover{transform:scale(1.02);box-shadow:0 15px 50px rgba(0,0,0,0.9), 0 0 40px rgba(0,245,212,0.3)}
+.canvas-placeholder{text-align:center;color:var(--muted);padding:80px 20px;position:relative;z-index:1}
+.placeholder-icon{font-size:80px;margin-bottom:20px;opacity:0.6;filter:drop-shadow(0 0 20px rgba(0,245,212,0.3));animation:float 3s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.canvas-placeholder p{font-size:18px;margin:0;opacity:0.8;text-shadow:0 2px 10px rgba(0,0,0,0.5)}
+
+/* Fullscreen Modal */
+.fullscreen-modal{position:fixed;top:0;left:0;right:0;bottom:0;background:#000;z-index:1000;display:flex;align-items:center;justify-content:center}
+.fullscreen-modal canvas{max-width:100%;max-height:100%;width:auto;height:auto}
+.fullscreen-modal img.fullscreen-img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain}
+.close-fullscreen{position:absolute;top:20px;right:20px;background:rgba(255,255,255,0.2);border:2px solid rgba(255,255,255,0.3);color:#fff;width:50px;height:50px;border-radius:50%;font-size:24px;cursor:pointer;transition:all 0.3s;z-index:1001}
+.close-fullscreen:hover{background:rgba(255,255,255,0.3);transform:rotate(90deg)}
+
+/* Footer */
+.footer{margin-top:80px;text-align:center;color:var(--muted);padding:50px 20px;border-top:2px solid var(--border);position:relative;background:linear-gradient(to bottom, transparent, rgba(0,245,212,0.08));backdrop-filter:blur(15px);border-radius:20px 20px 0 0}
+.footer::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:300px;height:3px;background:linear-gradient(90deg, transparent, var(--accent), var(--accent2), var(--accent3), transparent);animation:gradientMove 4s ease infinite;border-radius:2px}
+.footer p{font-size:18px;opacity:0.95;text-shadow:0 2px 15px rgba(0,0,0,0.6);font-weight:500;letter-spacing:1px;line-height:1.8;background:linear-gradient(135deg, rgba(0,245,212,0.8), rgba(123,44,191,0.8), rgba(255,0,110,0.8));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:gradientText 5s ease infinite}
+
+/* Responsive */
+@media (max-width:1200px){
+  .wallpaper-grid{grid-template-columns:repeat(auto-fill, minmax(240px, 1fr));gap:20px}
+}
+
+@media (max-width:768px){
+  .page{padding:16px}
+  .header h1{font-size:32px}
+  .subtitle{font-size:16px}
+  .category-tabs{gap:8px;padding:16px}
+  .tab-btn{padding:10px 16px;font-size:14px}
+  .wallpaper-grid{grid-template-columns:repeat(auto-fill, minmax(200px, 1fr));gap:16px}
+  .wallpaper-icon{font-size:48px}
+  .controls-panel{padding:20px}
+  .control-row{flex-direction:column}
+  .control-label{min-width:100%}
+  .action-buttons{flex-direction:column}
+  .btn-primary,.btn-secondary,.btn-outline{width:100%}
+  .canvas-header{flex-direction:column;gap:12px;align-items:flex-start}
+  canvas{max-width:100%}
+}
+
+@media (max-width:480px){
+  .wallpaper-grid{grid-template-columns:1fr}
+  .header h1{font-size:28px}
+  .section-title{font-size:24px}
+}
