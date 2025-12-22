@@ -29,7 +29,8 @@ start index.html
 - Add README, screenshots in `assets/`, and push to GitHub.
 
 ## Screenshots
-Place screenshots inside `assets/` and reference them here in the README before submission.
+<img width="1402" height="1183" alt="Screenshot 2025-12-14 220137" src="https://github.com/user-attachments/assets/1f00590a-f34e-4487-9324-bb8d654035a1" />
+
 
 ## License
 MIT
